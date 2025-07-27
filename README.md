@@ -57,7 +57,7 @@ SEARCH_ENGINE_ID=your_search_engine_id_here
 
 # 데이터베이스 (기본값 사용 가능)
 DB_NAME=financedb
-DB_USER=sangmin
+DB_USER=postgres
 DB_PASSWORD=0717
 DB_HOST=localhost
 DB_PORT=5432
