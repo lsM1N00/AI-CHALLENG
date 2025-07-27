@@ -26,5 +26,10 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 # === 임베딩 모델 설정 ===
 EMBEDDING_MODEL_NAME = "BAAI/bge-m3"
 
-# --- Web Search (Tavily) Settings ---
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "your_tavily_api_key_here")
+# === Google Custom Search 설정 ===
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "your_google_api_key_here")
+
+# 검색 엔진 ID들
+CASE_LAW_SEARCH_ENGINE_ID = os.getenv("CASE_LAW_SEARCH_ENGINE_ID", "your_case_law_engine_id")  # 판례 검색 엔진
+FAQ_SEARCH_ENGINE_ID = os.getenv("FAQ_SEARCH_ENGINE_ID", "your_faq_engine_id")  # FAQ 검색 엔진
+SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID", "your_general_engine_id")  # 일반/기본 검색 엔진

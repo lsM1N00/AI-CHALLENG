@@ -101,7 +101,7 @@ class BaseWorkerAgent(ABC):
             response = llm_result["result"]
             
             # 5. 추론 과정 생성
-            reasoning = self._generate_reasoning(query, all_sources, response)
+            reasoning = self._generate_reasoning(query, rag_sources + web_sources, response)
             
             # 7. 메모리에 상호작용 저장
             self.memory_manager.save_interaction(
@@ -116,7 +116,7 @@ class BaseWorkerAgent(ABC):
             return AgentResponse(
                 agent_id=self.agent_id,
                 response=response,
-                sources=all_sources,
+                sources=rag_sources + web_sources,
                 reasoning=reasoning,
                 execution_time=execution_time,
                 success=True
@@ -144,10 +144,43 @@ class BaseWorkerAgent(ABC):
             return []
     
     async def _search_web(self, query: str) -> List[Dict[str, Any]]:
-        """웹 검색"""
+        """웹 검색 (에이전트별 특화 검색 엔진 사용)"""
         try:
-            results = self.web_searcher.search(query, num_results=2)
-            return [{"type": "web", **result} for result in results]
+            # 에이전트 타입에 따라 다른 검색 엔진 사용
+            if self.agent_id == "LegalExpert":
+                # 법률 전문 에이전트: 판례와 FAQ 검색 둘 다 사용
+                separated_results = self.web_searcher.search_case_law_and_faq(query, num_results=2)
+                
+                results = []
+                # 판례 검색 결과 추가
+                for result in separated_results.get("case_law", []):
+                    results.append({
+                        "type": "web", 
+                        "source_category": "판례",
+                        **result
+                    })
+                
+                # FAQ 검색 결과 추가
+                for result in separated_results.get("faq", []):
+                    results.append({
+                        "type": "web", 
+                        "source_category": "FAQ",
+                        **result
+                    })
+                
+                print(f"[{self.agent_id}] 웹 검색 완료: 판례 {len(separated_results.get('case_law', []))}개, FAQ {len(separated_results.get('faq', []))}개")
+                return results
+                
+            elif self.agent_id == "TechnicalAnalyst":
+                # 기술 분석 에이전트: 일반 검색 엔진 사용
+                results = self.web_searcher.search(query, num_results=2, engine_types=["general"])
+                return [{"type": "web", "source_category": "기술정보", **result} for result in results]
+                
+            else:
+                # 일반 지식 에이전트: 일반 검색 엔진 사용
+                results = self.web_searcher.search(query, num_results=2, engine_types=["general"])
+                return [{"type": "web", "source_category": "일반정보", **result} for result in results]
+                
         except Exception as e:
             print(f"웹 검색 오류 ({self.agent_id}): {e}")
             return []
