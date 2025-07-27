@@ -98,7 +98,7 @@ graph TB
 링크로 이동해서 사진 처럼 < https://obank.kbstar.com/quics?page=C019763#loading > 추가하고 만들기
 
 
-5. 민들었으면 개요에 들억가서 아래 사진처럼 search engine id 복사
+5. 민들었으면 customizes 누르고 아래 사진처럼 search engine id 복사
 
 <img width="802" height="733" alt="스크린샷 2025-07-27 오후 3 14 31" src="https://github.com/user-attachments/assets/bc88b83d-930e-4de8-ab1b-cf80e77c9b86" />
 
