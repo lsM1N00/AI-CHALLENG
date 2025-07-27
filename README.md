@@ -92,13 +92,11 @@ graph TB
 2. 프러젝트 이름 설정, 키 발급 및 복사
 <img width="800" height="429" alt="스크린샷 2025-07-27 오후 3 02 04" src="https://github.com/user-attachments/assets/782e2d74-552e-458d-9388-41b7c4b8050b" />
 
-3. <검색엔진 선택하기> https://programmablesearchengine.google.com/controlpanel/all
+3. <검색엔진 선택하기> https://programmablesearchengine.google.com/controlpanel/all 링크로 이동해서 사진 처럼 < https://obank.kbstar.com/quics?page=C019763#loading > 추가하고 만들기
 <img width="658" height="861" alt="스크린샷 2025-07-27 오후 3 13 09" src="https://github.com/user-attachments/assets/571ae338-22a9-4d2e-82c2-b0f7506d2661" />
 
-링크로 이동해서 사진 처럼 < https://obank.kbstar.com/quics?page=C019763#loading > 추가하고 만들기
 
-
-5. 민들었으면 customizes 누르고 아래 사진 search engine id 복사하고 Region을 south korea로 설정 및 Language를 korean으로 설정, search the entire web을 "on"으로 설정
+4. 민들었으면 customizes 누르고 아래 사진 search engine id 복사하고 Region을 south korea로 설정 및 Language를 korean으로 설정, search the entire web을 "on"으로 설정
 
 <img width="513" height="49" alt="스크린샷 2025-07-27 오후 3 56 25" src="https://github.com/user-attachments/assets/e01c8f08-850a-475c-b2d3-2ea086b87acc" />
 <img width="492" height="92" alt="스크린샷 2025-07-27 오후 3 55 54" src="https://github.com/user-attachments/assets/99d2dda0-9f5e-486c-b0c4-c07a4fe6dba2" />
