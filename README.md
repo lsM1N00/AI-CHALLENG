@@ -98,9 +98,17 @@ graph TB
 링크로 이동해서 사진 처럼 < https://obank.kbstar.com/quics?page=C019763#loading > 추가하고 만들기
 
 
-5. 민들었으면 customizes 누르고 아래 사진처럼 search engine id 복사
+5. 민들었으면 customizes 누르고 아래 사진 search engine id 복사하고 Region을 south korea로 설정 및 Language를 korean으로 설정, search the entire web을 "on"으로 설정
 
-<img width="802" height="733" alt="스크린샷 2025-07-27 오후 3 14 31" src="https://github.com/user-attachments/assets/bc88b83d-930e-4de8-ab1b-cf80e77c9b86" />
+<img width="513" height="49" alt="스크린샷 2025-07-27 오후 3 56 25" src="https://github.com/user-attachments/assets/e01c8f08-850a-475c-b2d3-2ea086b87acc" />
+<img width="492" height="92" alt="스크린샷 2025-07-27 오후 3 55 54" src="https://github.com/user-attachments/assets/99d2dda0-9f5e-486c-b0c4-c07a4fe6dba2" />
+<img width="492" height="92" alt="스크린샷 2025-07-27 오후 3 55 47" src="https://github.com/user-attachments/assets/4a7f1618-4e0c-4f2d-a60d-0dcf34c0d778" />
+<img width="513" height="49" alt="스크린샷 2025-07-27 오후 3 56 19" src="https://github.com/user-attachments/assets/77aae7b2-4ddb-4812-9ea0-73339bfce944" />
+
+
+
+
+
 
 # code에 적용
 .env 파일에서 복사한 키 붙여넣기
