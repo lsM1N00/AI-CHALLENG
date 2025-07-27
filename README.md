@@ -85,3 +85,26 @@ graph TB
     class Memory,Feedback,DB,Google toolClass
     class Analysis,Health,Integration,Final dataClass
 ```
+
+# Google custom search JSON API 발급방법 (모든 키는 복사해둔다)
+<Googel custom search JSON API 발급 사이트> https://developers.google.com/custom-search/v1/overview?hl=ko
+1. 링크로 들어가서 "키 가져오기" 클릭
+2. 프러젝트 이름 설정, 키 발급 및 복사
+<img width="800" height="429" alt="스크린샷 2025-07-27 오후 3 02 04" src="https://github.com/user-attachments/assets/782e2d74-552e-458d-9388-41b7c4b8050b" />
+
+3. <검색엔진 선택하기> https://programmablesearchengine.google.com/controlpanel/all
+<img width="658" height="861" alt="스크린샷 2025-07-27 오후 3 13 09" src="https://github.com/user-attachments/assets/571ae338-22a9-4d2e-82c2-b0f7506d2661" />
+
+링크로 이동해서 사진 처럼 < https://obank.kbstar.com/quics?page=C019763#loading > 추가하고 만들기
+
+
+5. 민들었으면 개요에 들억가서 아래 사진처럼 search engine id 복사
+
+<img width="802" height="733" alt="스크린샷 2025-07-27 오후 3 14 31" src="https://github.com/user-attachments/assets/bc88b83d-930e-4de8-ab1b-cf80e77c9b86" />
+
+# code에 적용
+.env 파일에서 복사한 키 붙여넣기
+```bash
+GOOGLE_API_KEY=\"복사한 api 키\"
+SEARCH_ENGINE_ID=\"복사한 search engine id\"
+```
