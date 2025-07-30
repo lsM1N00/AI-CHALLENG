@@ -7,6 +7,7 @@
 pip install openai
 pip install google-genai
 pip install anthropic
+pip install google-generativeai
 ```
 
 ## postgresql에서 financedb에 접속
