@@ -1,6 +1,14 @@
 # AI agent
 ## 금융 소비자 권익 보호를 위한 AI agent
 ## 법 전처리 테스트시 "채권의 공정한 추심에 관한 법률.pdf"를 사용할 것을 권장합니다.
+
+# LLM 모델 라이브러리 설치(필수)
+```bash
+pip install openai
+pip install google-genai
+pip install anthropic
+```
+
 ## postgresql에서 financedb에 접속
 ```bash
 # 리눅스 환경에서 financedb 실행
@@ -107,10 +115,12 @@ graph TB
 
 
 
-
 # code에 적용
 .env 파일에서 복사한 키 붙여넣기
+
+
+
 ```bash
-GOOGLE_API_KEY=\"복사한 api 키\"
-SEARCH_ENGINE_ID=\"복사한 search engine id\"
+GOOGLE_API_KEY=복사한 api 키
+SEARCH_ENGINE_ID=복사한 search engine id
 ```
