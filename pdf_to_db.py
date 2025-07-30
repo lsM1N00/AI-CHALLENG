@@ -88,16 +88,37 @@ def parse_law_into_clauses(text, filename):
         # 조 제목과 본문이 한 줄에 있는 경우도 처리
         # 참조 패턴은 분리하지 않음 (조사가 붙거나 복합 참조인 경우)
         
-        # 1단계: 참조 패턴을 임시 토큰으로 치환
+        logging.info("=== split_articles 디버깅 시작 ===")
+        logging.info(f"입력 텍스트 길이: {len(text)}")
+        logging.info(f"입력 텍스트 앞 200자: {text[:200]}")
+        
+        # 1단계: 조문 제목 보호 - 조문 제목 형태는 임시 토큰으로 보호
+        title_counter = 0
+        title_map = {}
         temp_text = text
+        
+        # 조문 제목 패턴 보호
+        title_pattern = r'제\s*\d+\s*조(?:의\d+)?\s*\([^)]+\)'
+        title_matches = re.finditer(title_pattern, temp_text)
+        for match in title_matches:
+            title_token = f'__TITLE_TOKEN_{title_counter}__'
+            title_map[title_token] = match.group()
+            temp_text = temp_text.replace(match.group(), title_token, 1)
+            title_counter += 1
+            logging.info(f"조문 제목 보호: '{match.group()}' -> '{title_token}'")
+        
+        # 2단계: 참조 패턴을 임시 토큰으로 치환
         reference_counter = 0
         reference_map = {}
         
-        # 복합 참조 패턴들 (제9조제1호, 제8조의4를, 제10조제1항을 등)
+        # 복합 참조 패턴들 - 더 정확하게 수정
         reference_patterns = [
             r'제\d+조(?:의\d+)?제\d+(?:호|항|목)(?:부터\s+제\d+(?:호|항|목)까지)?[를에의와로은는과]',  # 제9조제1호를
-            r'제\d+조(?:의\d+)?[를에의와로은는과]',  # 제8조의4를
-            r'제\d+조(?:의\d+)?(?:제\d+(?:호|항|목))?부터\s+제\d+(?:호|항|목)까지[를에의와로은는과]?'  # 제9조제2호부터 제7호까지를
+            r'제\d+조(?:의\d+)?제\d+(?:호|항|목)\s*에\s*따라',  # 제5조제2항에 따라
+            r'제\d+조(?:의\d+)?(?:제\d+(?:호|항|목))?부터\s+제\d+(?:호|항|목)까지[를에의와로은는과]?',  # 제9조제2호부터 제7호까지를
+            r'법\s+제\d+조(?:의\d+)?(?:제\d+(?:호|항|목))?\s*에\s*따라',  # 법 제13조제1항에 따라
+            r'제\d+조(?:의\d+)?\s*에서\s*정한',  # 제1조의2에서 정한
+            r'제\d+조(?:의\d+)?[를에의와로은는과]',  # 제8조의4를 (조사가 붙은 참조)
         ]
         
         for pattern in reference_patterns:
@@ -107,17 +128,70 @@ def parse_law_into_clauses(text, filename):
                 reference_map[token] = match.group()
                 temp_text = temp_text.replace(match.group(), token, 1)
                 reference_counter += 1
+                logging.info(f"참조 패턴 치환: '{match.group()}' -> '{token}'")
         
-        # 2단계: 실제 조항만 분리 (제목이 있거나 내용이 바로 시작하는 경우)
-        pattern = r'(제\s*\d+\s*조(?:의\d+)?(?:\([^)]+\))?)'
+        # 3단계: 조문 제목 복원
+        for title_token, original_title in title_map.items():
+            temp_text = temp_text.replace(title_token, original_title)
+            logging.info(f"조문 제목 복원: '{title_token}' -> '{original_title}'")
+        
+        # 4단계: 실제 조항만 분리 - 제목이 있는 경우만 조문의 시작으로 인식
+        # 제목이 있는 조문만 분리: 제N조(제목) 형태
+        pattern = r'(제\s*\d+\s*조(?:의\d+)?\s*\([^)]+\))'
+        logging.info(f"조문 분리 패턴: {pattern}")
         articles = re.split(pattern, temp_text)
+        logging.info(f"첫 번째 패턴으로 분리된 조문 개수: {len(articles)}")
         
-        # 3단계: 참조 토큰을 원래 텍스트로 복원
+        # 만약 제목이 있는 조문이 없다면 기존 패턴 사용 (하위 호환성)
+        if len(articles) <= 1:
+            pattern = r'(제\s*\d+\s*조(?:의\d+)?(?:\([^)]+\))?)'
+            logging.info(f"대체 패턴 사용: {pattern}")
+            articles = re.split(pattern, temp_text)
+            logging.info(f"대체 패턴으로 분리된 조문 개수: {len(articles)}")
+        
+        # 각 분리된 조문 미리보기
+        for i, article in enumerate(articles):
+            if article.strip():
+                first_50 = article.strip()[:50].replace('\n', ' ')
+                logging.info(f"분리된 조문 {i}: {first_50}...")
+        
+        # 5단계: 참조 토큰을 원래 텍스트로 복원
         for i, article in enumerate(articles):
             for token, original in reference_map.items():
                 articles[i] = articles[i].replace(token, original)
         
-        return articles
+        # 6단계: 빈 조문 제거하고 정리
+        result = []
+        i = 0
+        while i < len(articles):
+            article = articles[i].strip()
+            if article and '제' in article and '조' in article and '(' in article and ')' in article:
+                # 조문 제목을 찾았음
+                title = article
+                content = ""
+                
+                # 다음 항목이 내용인지 확인
+                if i + 1 < len(articles):
+                    next_content = articles[i + 1].strip()
+                    if next_content and not (next_content.startswith('제') and '조' in next_content and '(' in next_content):
+                        content = next_content
+                        i += 2  # 제목과 내용 둘 다 처리했으므로 2 증가
+                    else:
+                        i += 1  # 제목만 처리
+                else:
+                    i += 1
+                
+                # 제목과 내용을 분리해서 반환 (기존 조문 처리 루프와 호환)
+                result.append(title)
+                result.append(content)
+                logging.info(f"분리된 조문 추가: 제목='{title}', 내용 길이={len(content)}")
+            else:
+                i += 1
+        
+        logging.info(f"최종 결과 조문 개수: {len(result)//2}개")
+        logging.info("=== split_articles 디버깅 끝 ===")
+        
+        return result
     
     def split_hang(text):
         # 항: ①, ②, ③, ... 
@@ -171,34 +245,165 @@ def parse_law_into_clauses(text, filename):
         main_text = full_text.split('부칙')[0]
         addendum_text = '부칙' + '부칙'.join(full_text.split('부칙')[1:])
         logging.info(f"메인 법률과 부칙을 분리해서 파싱합니다: {filename}")
+        logging.info(f"메인 텍스트 길이: {len(main_text)}")
+        logging.info(f"부칙 텍스트 길이: {len(addendum_text)}")
+        logging.info(f"메인 텍스트 앞 200자: {main_text[:200]}")
     else:
         main_text = full_text
         addendum_text = ""
+        logging.info(f"부칙이 없어서 전체를 메인 텍스트로 처리합니다: {filename}")
+        logging.info(f"메인 텍스트 길이: {len(main_text)}")
     
     # 다른 법률 개정 관련 내용 제거 (예: "○○법률 일부를 다음과 같이 개정한다")
     if '일부를 다음과 같이 개정한다' in main_text:
         main_text = main_text.split('일부를 다음과 같이 개정한다')[0]
         logging.info(f"개정 관련 부분을 제외하고 파싱합니다: {filename}")
     
+    logging.info(f"=== 메인 텍스트 처리 시작: {filename} ===")
+    logging.info(f"최종 메인 텍스트 길이: {len(main_text)}")
+    
     # 1. 장이 있는 경우 (현재 test.pdf에는 없음)
     if re.search(r'\d+장', main_text):
-        # 기존 장 처리 로직 유지하되 새로운 파싱 적용
-        pass
-    
+        logging.info("장이 있는 구조로 처리합니다.")
+        # 장별로 분리 후 각 장 내의 조문들을 처리
+        
+        # 더 정확한 장 분리: 실제 장 제목만 찾기
+        # 올바른 장 제목 패턴 찾기
+        chapter_titles = []
+        chapter_positions = []
+        
+        lines = main_text.split('\n')
+        for i, line in enumerate(lines):
+            line = line.strip()
+            # "제N장"으로 시작하고 의미 있는 제목이 있는 경우 (법률, 시행령 제외)
+            if re.match(r'^제\s*\d+\s*장\s+[가-힣\s]+', line) and '법률' not in line and '시행령' not in line:
+                chapter_match = re.match(r'^(제\s*\d+\s*장)\s+(.+)', line)
+                if chapter_match:
+                    chapter_num = re.search(r'\d+', chapter_match.group(1)).group()
+                    chapter_title = chapter_match.group(2).strip()
+                    
+                    position = main_text.find(line)
+                    if position != -1:
+                        chapter_titles.append((chapter_num, chapter_title, line))
+                        chapter_positions.append(position)
+                        logging.info(f"장 발견: 제{chapter_num}장 {chapter_title}")
+        
+        logging.info(f"찾은 장의 개수: {len(chapter_titles)}개")
+        
+        # 각 장별로 텍스트 분리
+        for idx, (chapter_num, chapter_title, full_title) in enumerate(chapter_titles):
+            start_pos = chapter_positions[idx]
+            end_pos = chapter_positions[idx + 1] if idx + 1 < len(chapter_positions) else len(main_text)
+            
+            chapter_text = main_text[start_pos:end_pos]
+            logging.info(f"처리 중: 제{chapter_num}장 {chapter_title} (길이: {len(chapter_text)})")
+            
+            # 각 장 내의 조문들을 분리
+            articles = split_articles(chapter_text)
+            logging.info(f"제{chapter_num}장에서 {len(articles)//2}개 조문 분리됨")
+            
+            for i in range(0, len(articles), 2):
+                if i+1 >= len(articles):
+                    continue
+                    
+                article_title = articles[i].strip()
+                article_content = articles[i+1].strip()
+                
+                # 장 제목 자체는 건너뛰기
+                if article_title == full_title:
+                    continue
+                
+                logging.info(f"=== 제{chapter_num}장 조문 {i//2 + 1} 처리 중 ===")
+                logging.info(f"article_title: '{article_title}'")
+                logging.info(f"article_content 길이: {len(article_content)}")
+                
+                # 조 번호 추출
+                article_num_match = re.match(r'제\s*(\d+\s*조(?:의\d+)?)', article_title)
+                if not article_num_match:
+                    logging.warning(f"조 번호를 추출할 수 없습니다: {article_title}")
+                    continue
+                article_num = article_num_match.group(1).replace(' ', '')
+                
+                logging.info(f"추출된 조 번호: '{article_num}'")
+                
+                # 먼저 항(①②③)이 있는지 확인
+                hang_split = split_hang(article_content)
+                if len(hang_split) > 1:
+                    # 항이 있는 경우 (기존 로직과 동일)
+                    preamble = hang_split[0].strip()
+                    hang_num_map = {'①': 1, '②': 2, '③': 3, '④': 4, '⑤': 5, '⑥': 6, '⑦': 7, '⑧': 8, '⑨': 9, '⑩': 10,
+                                   '⑪': 11, '⑫': 12, '⑬': 13, '⑭': 14, '⑮': 15, '⑯': 16, '⑰': 17, '⑱': 18, '⑲': 19, '⑳': 20}
+                    
+                    for k in range(1, len(hang_split), 2):
+                        if k+1 >= len(hang_split):
+                            continue
+                        hang_symbol = hang_split[k]
+                        hang_text = hang_split[k+1].strip()
+                        hang_num = hang_num_map.get(hang_symbol, 0)
+                        
+                        processed_chunks = process_ho_and_mok(
+                            hang_text, law_title, chapter_title, article_title, article_num, hang_num, hang_symbol, filename
+                        )
+                        chunks.extend(processed_chunks)
+                else:
+                    # 항이 없는 경우 (기존 로직과 동일)
+                    processed_chunks = process_ho_and_mok(
+                        article_content, law_title, chapter_title, article_title, article_num, 0, "", filename
+                    )
+                    
+                    if not processed_chunks or len(processed_chunks) == 0:
+                        if article_content.strip():
+                            chunks.append({
+                                "title": law_title,
+                                "chapter_title": chapter_title,
+                                "article_title": article_title,
+                                "chapter": chapter_num,
+                                "article": article_num,
+                                "hang": "",
+                                "hang_symbol": "",
+                                "mok": "",
+                                "gamok": "",
+                                "clause_id": article_num,
+                                "content": f"{article_title} {article_content.strip()}",
+                                "source_file": filename
+                            })
+                    else:
+                        chunks.extend(processed_chunks)
     # 2. 편이 있는 경우 (현재 test.pdf에는 없음)  
     elif re.search(r'제\d+편', main_text):
+        logging.info("편이 있는 구조로 처리합니다.")
         # 기존 편 처리 로직 유지하되 새로운 파싱 적용
         pass
     
     # 3. 조만 있는 경우 (test.pdf의 경우)
     else:
+        logging.info("조만 있는 구조로 처리합니다.")
         articles = split_articles(main_text)
-        for i in range(1, len(articles), 2):
+        logging.info(f"=== 조문 처리 시작: {len(articles)//2}개 조문 ===")
+        
+        if len(articles) == 0:
+            logging.warning("조문이 분리되지 않았습니다.")
+        
+        for i in range(0, len(articles), 2):
             if i+1 >= len(articles):
                 continue
                 
             article_title = articles[i].strip()
             article_content = articles[i+1].strip()
+            
+            logging.info(f"=== 조문 {i//2 + 1} 처리 중 ===")
+            logging.info(f"article_title: '{article_title}'")
+            logging.info(f"article_content 길이: {len(article_content)}")
+            logging.info(f"article_content 앞 100자: {article_content[:100]}")
+            
+            # 조 번호 추출
+            article_num_match = re.match(r'제\s*(\d+\s*조(?:의\d+)?)', article_title)
+            if not article_num_match:
+                logging.warning(f"조 번호를 추출할 수 없습니다: {article_title}")
+                continue
+            article_num = article_num_match.group(1).replace(' ', '')
+            
+            logging.info(f"추출된 조 번호: '{article_num}'")
             
             # 2조 원본 텍스트 디버깅
             if "2조" in article_title:
@@ -207,12 +412,6 @@ def parse_law_into_clauses(text, filename):
                 logging.info(f"article_content 길이: {len(article_content)}")
                 logging.info(f"article_content 전체:\n{article_content}")
                 logging.info(f"=== 2조 원본 텍스트 끝 ===")
-            
-            # 조 번호 추출
-            article_num_match = re.match(r'제\s*(\d+\s*조(?:의\d+)?)', article_title)
-            if not article_num_match:
-                continue
-            article_num = article_num_match.group(1).replace(' ', '')
             
             # 먼저 항(①②③)이 있는지 확인
             hang_split = split_hang(article_content)
@@ -270,7 +469,7 @@ def parse_law_into_clauses(text, filename):
         amendment_article_num = ""
         skip_next = False
         
-        for i in range(1, len(addendum_articles), 2):
+        for i in range(0, len(addendum_articles), 2):
             if i+1 >= len(addendum_articles):
                 continue
                 
@@ -285,7 +484,7 @@ def parse_law_into_clauses(text, filename):
                 continue
             
             # 부칙의 경우 joo = '부칙'으로 설정
-            if '부칙' in article_title or i == 1:  # 첫 번째이거나 부칙이 포함된 경우
+            if '부칙' in article_title or i == 0:  # 첫 번째이거나 부칙이 포함된 경우
                 article_num = '부칙'
             else:
                 # 부칙 내의 조 번호 추출
@@ -696,13 +895,13 @@ def determine_table_name(filename: str) -> str:
     # 확장자 제거하고 분석
     name_without_ext = os.path.splitext(filename)[0].lower()
     
-    if name_without_ext.endswith(('세칙', '규칙')):
+    if '세칙' in name_without_ext or '규칙' in name_without_ext:  # endswith에서 in으로 변경
         return 'rules'
     elif name_without_ext.endswith(('법령', '법', '법률')):
         return 'laws'
-    elif name_without_ext.endswith('약관'):
+    elif '약관' in name_without_ext:  # endswith에서 in으로 변경
         return 'terms'
-    elif name_without_ext.endswith('시행령'):
+    elif '시행령' in name_without_ext:  # endswith에서 in으로 변경
         return 'enfor'
     else:
         # 기본값은 laws 테이블
