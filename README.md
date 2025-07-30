@@ -95,26 +95,6 @@ graph TB
     class Analysis,Health,Integration,Final dataClass
 ```
 
-# Google custom search JSON API 발급방법 (모든 키는 복사해야 합니다.)
-<Googel custom search JSON API 발급 사이트> https://developers.google.com/custom-search/v1/overview?hl=ko
-1. 링크로 들어가서 "키 가져오기" 클릭
-2. 프러젝트 이름 설정, 키 발급 및 복사
-<img width="800" height="429" alt="스크린샷 2025-07-27 오후 3 02 04" src="https://github.com/user-attachments/assets/782e2d74-552e-458d-9388-41b7c4b8050b" />
-
-3. <검색엔진 선택하기> https://programmablesearchengine.google.com/controlpanel/all 링크로 이동해서 FAQ 검색엔진, 판례 검색엔진 각각 만들기 FAQ 검색엔진에는 https://obank.kbstar.com/quics?page=C019763#loading, https://www.fss.or.kr/fss/bbs/B0000172/list.do?menuNo=200202 추가하고 만들고, 판례 검색엔진에는 https://www.fss.or.kr/fss/bbs/B0000390/list.do?menuNo=201193, https://www.fss.or.kr/fss/job/fncCnflCase/list.do?menuNo=201195, https://www.fss.or.kr/fss/job/fncCnflMainPrcdnt/list.do?menuNo=201196 추가.
-<img width="658" height="861" alt="스크린샷 2025-07-27 오후 3 13 09" src="https://github.com/user-attachments/assets/571ae338-22a9-4d2e-82c2-b0f7506d2661" />
-
-
-5. 민들었으면 customizes 누르고 아래 사진 search engine id 복사하고 Region을 south korea로 설정 및 Language를 korean으로 설정, search the entire web을 "on"으로 설정
-
-<img width="513" height="49" alt="스크린샷 2025-07-27 오후 3 56 25" src="https://github.com/user-attachments/assets/e01c8f08-850a-475c-b2d3-2ea086b87acc" />
-<img width="492" height="92" alt="스크린샷 2025-07-27 오후 3 55 54" src="https://github.com/user-attachments/assets/99d2dda0-9f5e-486c-b0c4-c07a4fe6dba2" />
-<img width="492" height="92" alt="스크린샷 2025-07-27 오후 3 55 47" src="https://github.com/user-attachments/assets/4a7f1618-4e0c-4f2d-a60d-0dcf34c0d778" />
-<img width="513" height="49" alt="스크린샷 2025-07-27 오후 3 56 19" src="https://github.com/user-attachments/assets/77aae7b2-4ddb-4812-9ea0-73339bfce944" />
-
-
-
-
 
 # code에 적용
 .env 파일에서 복사한 키 붙여넣기
