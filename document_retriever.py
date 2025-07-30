@@ -56,16 +56,16 @@ class DocumentRetriever:
 
             # 2. 유사도 검색 수행 (모든 테이블에서 검색)
             sql = """
-            SELECT id, context as content, metadata, 1 - (vector <=> %s) AS similarity, 'laws' as table_name
+            SELECT id, context as content, metadata, 1 - (vector <=> %s::vector) AS similarity, 'laws' as table_name
             FROM laws
             UNION ALL
-            SELECT id, context as content, metadata, 1 - (vector <=> %s) AS similarity, 'rules' as table_name
+            SELECT id, context as content, metadata, 1 - (vector <=> %s::vector) AS similarity, 'rules' as table_name
             FROM rules
             UNION ALL
-            SELECT id, context as content, metadata, 1 - (vector <=> %s) AS similarity, 'terms' as table_name
+            SELECT id, context as content, metadata, 1 - (vector <=> %s::vector) AS similarity, 'terms' as table_name
             FROM terms
             UNION ALL
-            SELECT id, context as content, metadata, 1 - (vector <=> %s) AS similarity, 'enfor' as table_name
+            SELECT id, context as content, metadata, 1 - (vector <=> %s::vector) AS similarity, 'enfor' as table_name
             FROM enfor
             ORDER BY similarity DESC
             LIMIT %s;

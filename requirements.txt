@@ -1,8 +1,12 @@
 # 🤖 멀티 에이전트 시스템 필수 패키지
 
 # === 핵심 패키지 ===
-# LLM API
-groq>=0.4.0
+# LLM API - 다중 Provider 지원
+openai>=1.97.1
+anthropic>=0.60.0
+google-genai>=1.27.0
+google-generativeai>=0.8.5
+google-ai-generativelanguage>=0.6.15
 
 # 웹 검색 (선택사항)
 requests>=2.28.0
@@ -15,8 +19,9 @@ psycopg2-binary>=2.9.0
 pgvector>=0.2.0
 
 # === 임베딩 (문서 검색용, 선택사항) ===
-torch>=2.0.0
-transformers>=4.30.0
+torch>=2.7.1
+transformers>=4.53.3
+sentence-transformers>=4.1.0  
 
 # === PDF 처리 (문서 처리용, 선택사항) ===
 PyMuPDF>=1.23.0

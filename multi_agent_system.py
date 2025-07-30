@@ -163,16 +163,22 @@ class MultiAgentSystem:
         
         try:
             # 1. 관리자 에이전트 상태 확인
+            print("[DEBUG] 관리자 에이전트 상태 확인 중...")
             manager_status = self.manager_agent.get_system_status()
+            print(f"[DEBUG] 관리자 에이전트 상태: {manager_status}")
             
-            # 2. 최근 성공률 확인
+            # 2. 최근 성공률 확인 (최소 5개 쿼리 이후부터)
             total_queries = self.system_stats["total_queries"]
-            if total_queries > 0:
+            success_rate = 1.0  # 기본값
+            
+            if total_queries >= 5:  # 최소 5개 쿼리 처리 후부터 성공률 체크
                 success_rate = self.system_stats["successful_queries"] / total_queries
                 if success_rate < 0.7:  # 성공률 70% 미만
                     health_status["issues"].append("낮은 성공률")
                     if success_rate < 0.5:
                         health_status["healthy"] = False
+            elif total_queries > 0:
+                success_rate = self.system_stats["successful_queries"] / total_queries
             
             # 3. 평균 응답 시간 확인
             avg_response_time = self.system_stats["average_response_time"]
@@ -191,12 +197,17 @@ class MultiAgentSystem:
                 health_status["issues"].append("메모리 시스템 오류")
             
             health_status["performance_metrics"] = {
-                "success_rate": success_rate if total_queries > 0 else 1.0,
+                "success_rate": success_rate,
                 "average_response_time": avg_response_time,
                 "total_queries": total_queries
             }
             
         except Exception as e:
+            print(f"[DEBUG] 시스템 상태 점검 실패: {e}")
+            print(f"[DEBUG] 오류 타입: {type(e).__name__}")
+            import traceback
+            print(f"[DEBUG] 전체 트레이스백:")
+            traceback.print_exc()
             health_status["healthy"] = False
             health_status["issues"].append(f"시스템 점검 오류: {str(e)}")
         

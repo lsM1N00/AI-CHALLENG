@@ -28,7 +28,12 @@ class ManagerAgent:
     """관리자 에이전트 - 워커 에이전트들의 결과를 통합하고 최종 답변 생성"""
     
     def __init__(self):
-        self.llm_handler = LLMHandler()
+        # Manager Agent는 Gemini 2.5 Pro 사용
+        self.llm_handler = LLMHandler(
+            provider="google",
+            model_name="gemini-2.5-pro",
+            temperature=0.3
+        )
         self.worker_pool = WorkerAgentPool()
         self.memory_manager = MemoryManager(db_path="manager_memory.db")
         self.feedback_system = FeedbackSystem()
@@ -102,6 +107,10 @@ class ManagerAgent:
             
         except Exception as e:
             print(f"[ManagerAgent] 오류 발생: {e}")
+            print(f"[ManagerAgent] 오류 타입: {type(e).__name__}")
+            import traceback
+            print(f"[ManagerAgent] 전체 트레이스백:")
+            traceback.print_exc()
             execution_time = time.time() - start_time
             
             return FinalResponse(
@@ -429,7 +438,7 @@ class ManagerAgent:
             "consistency": quality_metrics.get("consistency_score", 0)
         }
         
-        self.memory_manager.memory_manager.learn_pattern(
+        self.memory_manager.learn_pattern(
             pattern_type="multi_agent_quality",
             pattern_data=pattern_data,
             success=len(successful_agents) > 0

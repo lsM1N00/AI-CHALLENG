@@ -15,9 +15,15 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
 # === LLM 모델 설정 ===
-# 기본 LLM (Groq)
-LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "llama3-70b-8192")
-LLM_API_KEY = os.getenv("GROQ_API_KEY", "your_groq_api_key_here")
+
+# OpenAI 설정 (GPT-4.1) 설정
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "your_openai_api_key_here")
+
+# Anthropic (Claude 4 sonnet) 설정
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "your_anthropic_api_key_here")
+
+# Google (Gemini 2.5 pro) 설정
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "your_gemini_api_key_here")
 
 # Ollama 설정 (로컬 실행용)
 LLM_MODEL = "llama3"

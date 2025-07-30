@@ -205,12 +205,12 @@ class BaseWorkerAgent(ABC):
         return " ".join(reasoning_parts)
 
 class LegalExpertAgent(BaseWorkerAgent):
-    """법률 전문 에이전트 (Groq Llama 사용)"""
+    """법률 전문 에이전트 (Gemini 2.5 사용)"""
     
     def __init__(self, memory_manager: MemoryManager, feedback_system: FeedbackSystem):
         model_config = {
-            "provider": "groq",
-            "model": "llama3-70b-8192",
+            "provider": "google",
+            "model": "gemini-2.5-pro",
             "temperature": 0.2,
             "max_tokens": 1024
         }
@@ -218,8 +218,12 @@ class LegalExpertAgent(BaseWorkerAgent):
         self.specializations = ["법률", "규정", "시행령", "약관", "조항", "금융법", "소비자보호"]
     
     def _setup_llm_handler(self) -> LLMHandler:
-        """Groq Llama 모델 설정"""
-        return LLMHandler()  # 기존 Groq 설정 사용
+        """Google Gemini 2.5 모델 설정"""
+        return LLMHandler(
+            provider=self.model_config["provider"],
+            model_name=self.model_config["model"],
+            temperature=self.model_config["temperature"]
+        )
     
     def _get_specialized_prompt(self, query: str, context: Dict[str, Any]) -> str:
         """법률 전문 프롬프트"""
@@ -258,12 +262,12 @@ class LegalExpertAgent(BaseWorkerAgent):
         return prompt
 
 class TechnicalAnalystAgent(BaseWorkerAgent):
-    """기술 분석 전문 에이전트 (OpenAI GPT 사용)"""
+    """기술 분석 전문 에이전트 (Claude 4 Sonnet 사용)"""
     
     def __init__(self, memory_manager: MemoryManager, feedback_system: FeedbackSystem):
         model_config = {
-            "provider": "openai",
-            "model": "gpt-4",
+            "provider": "anthropic",
+            "model": "claude-sonnet-4-20250514",
             "temperature": 0.3,
             "max_tokens": 1024
         }
@@ -271,9 +275,12 @@ class TechnicalAnalystAgent(BaseWorkerAgent):
         self.specializations = ["분석", "판례", "사례", "FAQ", "대응안내", "소비자보호"]
     
     def _setup_llm_handler(self) -> LLMHandler:
-        """OpenAI GPT 모델 설정 (시뮬레이션)"""
-        # 실제로는 OpenAI API를 사용하지만, 여기서는 기존 LLM 핸들러 사용
-        return LLMHandler()
+        """Anthropic Claude 4 Sonnet 모델 설정"""
+        return LLMHandler(
+            provider=self.model_config["provider"],
+            model_name=self.model_config["model"],
+            temperature=self.model_config["temperature"]
+        )
     
     def _get_specialized_prompt(self, query: str, context: Dict[str, Any]) -> str:
         """기술 분석 전문 프롬프트"""
@@ -310,12 +317,12 @@ class TechnicalAnalystAgent(BaseWorkerAgent):
         return prompt
 
 class GeneralKnowledgeAgent(BaseWorkerAgent):
-    """일반 지식 전문 에이전트 (Claude 사용)"""
+    """일반 지식 전문 에이전트 (GPT-4.1 사용)"""
     
     def __init__(self, memory_manager: MemoryManager, feedback_system: FeedbackSystem):
         model_config = {
-            "provider": "anthropic",
-            "model": "claude-3-sonnet",
+            "provider": "openai",
+            "model": "gpt-4.1",
             "temperature": 0.4,
             "max_tokens": 1024
         }
@@ -323,9 +330,12 @@ class GeneralKnowledgeAgent(BaseWorkerAgent):
         self.specializations = ["일반상식", "설명", "요약", "분석", "대응안내", "소비자보호", "금융지식"]
     
     def _setup_llm_handler(self) -> LLMHandler:
-        """Claude 모델 설정 (시뮬레이션)"""
-        # 실제로는 Anthropic API를 사용하지만, 여기서는 기존 LLM 핸들러 사용
-        return LLMHandler()
+        """OpenAI GPT-4.1 모델 설정"""
+        return LLMHandler(
+            provider=self.model_config["provider"],
+            model_name=self.model_config["model"],
+            temperature=self.model_config["temperature"]
+        )
     
     def _get_specialized_prompt(self, query: str, context: Dict[str, Any]) -> str:
         """일반 지식 전문 프롬프트"""
