@@ -690,8 +690,27 @@ def get_db_connection():
             conn.close()
             logging.info("DB 연결 종료.")
 
+# --- 파일명 기반 테이블 결정 함수 ---
+def determine_table_name(filename: str) -> str:
+    """파일명을 분석해서 적절한 테이블명을 반환"""
+    # 확장자 제거하고 분석
+    name_without_ext = os.path.splitext(filename)[0].lower()
+    
+    if name_without_ext.endswith(('세칙', '규칙')):
+        return 'rules'
+    elif name_without_ext.endswith(('법령', '법', '법률')):
+        return 'laws'
+    elif name_without_ext.endswith('약관'):
+        return 'terms'
+    elif name_without_ext.endswith('시행령'):
+        return 'enfor'
+    else:
+        # 기본값은 laws 테이블
+        logging.warning(f"파일명 '{filename}'에서 테이블을 결정할 수 없어 laws 테이블을 사용합니다.")
+        return 'laws'
+
 # --- 데이터베이스 삽입 함수 ---
-def insert_document_chunk(cursor, chunk):
+def insert_document_chunk(cursor, chunk, table_name: str):
     try:
         # chunk에서 필요한 값들 추출
         pyeon = chunk.get("pyeon", "")  # 편 추가
@@ -728,74 +747,97 @@ def insert_document_chunk(cursor, chunk):
             "clause_id": chunk.get("clause_id", ""),
             "source_file": chunk.get("source_file", ""),
             "ho": ho_value,
-            "mok": mok_value
+            "mok": mok_value,
         }
         
-        # DB에 삽입
-        cursor.execute("""
-            INSERT INTO laws (pyeon, jang, joo, hang, ho, mok, context, vector, metadata)
+        # DB에 삽입 (동적 테이블명 사용)
+        sql = f"""
+            INSERT INTO {table_name} (pyeon, jang, joo, hang, ho, mok, context, vector, metadata)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (pyeon, jang, joo, hang, ho, mok, context, embedding, json.dumps(metadata)))
+        """
+        cursor.execute(sql, (pyeon, jang, joo, hang, ho, mok, context, embedding, json.dumps(metadata)))
         
-        # 성공 로그 (조 정보만 출력)
-        logging.info(f"삽입 완료: {chunk.get('source_file', 'unknown')} - {joo}")
+        # 성공 로그 (조 정보와 테이블명 출력)
+        logging.info(f"삽입 완료 [{table_name}]: {chunk.get('source_file', 'unknown')} - {joo}")
         
     except Exception as e:
-        logging.error(f"DB 삽입 오류: {e}")
+        logging.error(f"DB 삽입 오류 [{table_name}]: {e}")
         logging.error(f"문제가 된 chunk: {chunk}")
         raise
 
 # --- 메인 실행 함수 ---
 def main():
-    pdf_directory = "./ai-/laws_pdfs"
-    if not os.path.exists(pdf_directory):
-        logging.warning(f"'{pdf_directory}' 디렉토리를 찾을 수 없습니다.")
+    pdf_directories = ["./laws_pdfs", "./enfor_pdfs", "./rules_pdfs", "./terms_pdfs"]
+    
+    # 존재하는 디렉토리만 필터링
+    existing_directories = []
+    for directory in pdf_directories:
+        if os.path.exists(directory):
+            existing_directories.append(directory)
+            logging.info(f"디렉토리 발견: {directory}")
+        else:
+            logging.warning(f"디렉토리를 찾을 수 없습니다: {directory}")
+    
+    if not existing_directories:
+        logging.error("처리할 PDF 디렉토리가 없습니다.")
         return
 
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-            # 테이블이 없으면 생성
-            cur.execute("""
-            CREATE TABLE IF NOT EXISTS laws (
-                id SERIAL PRIMARY KEY,
-                pyeon VARCHAR(100),
-                jang VARCHAR(100),
-                joo VARCHAR(100),
-                hang VARCHAR(100),
-                ho INTEGER,
-                mok VARCHAR(10),
-                context TEXT,
-                vector vector(1024),
-                metadata JSONB
-            );
-            """)
+            
+            # 모든 테이블 생성
+            tables = ['laws', 'rules', 'terms', 'enfor']
+            
+            for table_name in tables:
+                cur.execute(f"""
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    id SERIAL PRIMARY KEY,
+                    pyeon VARCHAR(100),
+                    jang VARCHAR(100),
+                    joo VARCHAR(100),
+                    hang VARCHAR(100),
+                    ho INTEGER,
+                    mok VARCHAR(10),
+                    context TEXT,
+                    vector vector(1024),
+                    metadata JSONB
+                );
+                """)
+                logging.info(f"Table '{table_name}' is ready.")
+            
             conn.commit()
-            logging.info("Table 'laws' is ready.")
 
-            # 모든 PDF 파일 처리
-            for filename in os.listdir(pdf_directory):
-                if not filename.endswith('.pdf'):
-                    continue
-                    
-                pdf_path = os.path.join(pdf_directory, filename)
+            # 각 디렉토리의 모든 PDF 파일 처리
+            for pdf_directory in existing_directories:
+                logging.info(f"디렉토리 처리 중: {pdf_directory}")
                 
-                if not os.path.exists(pdf_path):
-                    logging.error(f"❌ PDF 파일을 찾을 수 없습니다: {pdf_path}")
-                    continue
+                for filename in os.listdir(pdf_directory):
+                    if not filename.endswith('.pdf'):
+                        continue
+                        
+                    pdf_path = os.path.join(pdf_directory, filename)
                     
-                logging.info(f"처리 중: {pdf_path}")
+                    if not os.path.exists(pdf_path):
+                        logging.error(f"❌ PDF 파일을 찾을 수 없습니다: {pdf_path}")
+                        continue
+                        
+                    logging.info(f"처리 중: {pdf_path}")
 
-                full_text = extract_text_from_pdf(pdf_path)
-                if not full_text:
-                    logging.warning(f"건너뜀: {filename} (텍스트 추출 실패)")
-                    continue
+                    # 파일명에 따라 테이블 결정
+                    table_name = determine_table_name(filename)
+                    logging.info(f"파일 '{filename}'은 '{table_name}' 테이블에 저장됩니다.")
 
-                law_chunks = parse_law_into_clauses(full_text, filename)
-                logging.info(f"{filename}에서 {len(law_chunks)}개의 조/항을 찾았습니다.")
+                    full_text = extract_text_from_pdf(pdf_path)
+                    if not full_text:
+                        logging.warning(f"건너뜀: {filename} (텍스트 추출 실패)")
+                        continue
 
-                for chunk in law_chunks:
-                    insert_document_chunk(cur, chunk)
+                    law_chunks = parse_law_into_clauses(full_text, filename)
+                    logging.info(f"{filename}에서 {len(law_chunks)}개의 조/항을 찾았습니다.")
+
+                    for chunk in law_chunks:
+                        insert_document_chunk(cur, chunk, table_name)
             
             conn.commit()
 

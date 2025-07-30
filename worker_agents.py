@@ -137,7 +137,7 @@ class BaseWorkerAgent(ABC):
     async def _search_documents(self, query: str) -> List[Dict[str, Any]]:
         """문서 검색 (RAG)"""
         try:
-            results = self.retriever.search(query, top_k=3)
+            results = self.retriever.search(query, top_k=10)
             return [{"type": "document", **result} for result in results]
         except Exception as e:
             print(f"RAG 검색 오류 ({self.agent_id}): {e}")
@@ -205,28 +205,32 @@ class BaseWorkerAgent(ABC):
         return " ".join(reasoning_parts)
 
 class LegalExpertAgent(BaseWorkerAgent):
-    """법률 전문 에이전트 (Groq Llama 사용)"""
+    """법률 전문 에이전트 (Gemini 2.5 사용)"""
     
     def __init__(self, memory_manager: MemoryManager, feedback_system: FeedbackSystem):
         model_config = {
-            "provider": "groq",
-            "model": "llama3-70b-8192",
+            "provider": "google",
+            "model": "gemini-2.5-pro",
             "temperature": 0.2,
             "max_tokens": 1024
         }
         super().__init__("LegalExpert", model_config, memory_manager, feedback_system)
-        self.specializations = ["법률", "규정", "조항", "금융법", "소비자보호"]
+        self.specializations = ["법률", "규정", "시행령", "약관", "조항", "금융법", "소비자보호"]
     
     def _setup_llm_handler(self) -> LLMHandler:
-        """Groq Llama 모델 설정"""
-        return LLMHandler()  # 기존 Groq 설정 사용
+        """Google Gemini 2.5 모델 설정"""
+        return LLMHandler(
+            provider=self.model_config["provider"],
+            model_name=self.model_config["model"],
+            temperature=self.model_config["temperature"]
+        )
     
     def _get_specialized_prompt(self, query: str, context: Dict[str, Any]) -> str:
         """법률 전문 프롬프트"""
         rag_sources = context.get("rag_sources", [])
         web_sources = context.get("web_sources", [])
         
-        prompt = f"""당신은 대한민국 법률 전문가입니다. 특히 금융소비자보호법과 관련 법규에 능통합니다.
+        prompt = f"""당신은 대한민국 법률 전문가입니다. 모든 법에 능통합니다. 대응 절차와 보호 방안을 잘 알고 설명을 잘합니다.
 
 사용자 질문: {query}
 
@@ -246,39 +250,44 @@ class LegalExpertAgent(BaseWorkerAgent):
         prompt += """
 법률 전문가로서 다음 원칙에 따라 답변하세요:
 1. 정확한 법조문 인용
-2. 판례나 해석례 참조
+2. 판례나 사례, FAQ 참조
 3. 법적 근거 명시
 4. 실무적 적용 방안 제시
-5. 관련 법률 간 관계 설명
+5. 법률과 시행령은 하나로 보고 판단
+6. 약관 참조
+7. 위 모든 내용을 분석하여 대응 절차와 권리 보호 방안 안내
 
 답변:"""
         
         return prompt
 
 class TechnicalAnalystAgent(BaseWorkerAgent):
-    """기술 분석 전문 에이전트 (OpenAI GPT 사용)"""
+    """기술 분석 전문 에이전트 (Claude 4 Sonnet 사용)"""
     
     def __init__(self, memory_manager: MemoryManager, feedback_system: FeedbackSystem):
         model_config = {
-            "provider": "openai",
-            "model": "gpt-4",
+            "provider": "anthropic",
+            "model": "claude-sonnet-4-20250514",
             "temperature": 0.3,
             "max_tokens": 1024
         }
         super().__init__("TechnicalAnalyst", model_config, memory_manager, feedback_system)
-        self.specializations = ["기술", "시스템", "구현", "아키텍처", "개발"]
+        self.specializations = ["분석", "판례", "사례", "FAQ", "대응안내", "소비자보호"]
     
     def _setup_llm_handler(self) -> LLMHandler:
-        """OpenAI GPT 모델 설정 (시뮬레이션)"""
-        # 실제로는 OpenAI API를 사용하지만, 여기서는 기존 LLM 핸들러 사용
-        return LLMHandler()
+        """Anthropic Claude 4 Sonnet 모델 설정"""
+        return LLMHandler(
+            provider=self.model_config["provider"],
+            model_name=self.model_config["model"],
+            temperature=self.model_config["temperature"]
+        )
     
     def _get_specialized_prompt(self, query: str, context: Dict[str, Any]) -> str:
         """기술 분석 전문 프롬프트"""
         rag_sources = context.get("rag_sources", [])
         web_sources = context.get("web_sources", [])
         
-        prompt = f"""당신은 시스템 아키텍처와 기술 구현에 전문성을 가진 기술 분석가입니다.
+        prompt = f"""당신은 사례, 판례, FAQ 분석에 능통한 분석 전문가 입니다. 대응 절차와 보호 방안을 잘 알고 설명을 잘합니다.
 
 사용자 질문: {query}
 
@@ -296,41 +305,44 @@ class TechnicalAnalystAgent(BaseWorkerAgent):
                 prompt += f"{idx}. {source.get('title', '')}: {source.get('snippet', '')}\n"
         
         prompt += """
-기술 전문가로서 다음 관점에서 답변하세요:
-1. 기술적 구현 방법론
-2. 시스템 아키텍처 고려사항
-3. 성능 및 확장성 분석
-4. 보안 및 안정성 평가
-5. 실제 구현 예시 및 코드
+분석 전문가로서 다음 관점에서 답변하세요:
+1. 사례와 판례, FAQ 분석
+2. 은행과 금융감독원 FAQ를 참조
+3. 판례와 사례를 참조
+4. 약관 참조
+5. 위 모든 내용을 분석하여 대응 절차와 권리 보호 방안 안내
 
 답변:"""
         
         return prompt
 
 class GeneralKnowledgeAgent(BaseWorkerAgent):
-    """일반 지식 전문 에이전트 (Claude 사용)"""
+    """일반 지식 전문 에이전트 (GPT-4.1 사용)"""
     
     def __init__(self, memory_manager: MemoryManager, feedback_system: FeedbackSystem):
         model_config = {
-            "provider": "anthropic",
-            "model": "claude-3-sonnet",
+            "provider": "openai",
+            "model": "gpt-4.1",
             "temperature": 0.4,
             "max_tokens": 1024
         }
         super().__init__("GeneralKnowledge", model_config, memory_manager, feedback_system)
-        self.specializations = ["일반상식", "교육", "설명", "요약", "분석"]
+        self.specializations = ["일반상식", "설명", "요약", "분석", "대응안내", "소비자보호", "금융지식"]
     
     def _setup_llm_handler(self) -> LLMHandler:
-        """Claude 모델 설정 (시뮬레이션)"""
-        # 실제로는 Anthropic API를 사용하지만, 여기서는 기존 LLM 핸들러 사용
-        return LLMHandler()
+        """OpenAI GPT-4.1 모델 설정"""
+        return LLMHandler(
+            provider=self.model_config["provider"],
+            model_name=self.model_config["model"],
+            temperature=self.model_config["temperature"]
+        )
     
     def _get_specialized_prompt(self, query: str, context: Dict[str, Any]) -> str:
         """일반 지식 전문 프롬프트"""
         rag_sources = context.get("rag_sources", [])
         web_sources = context.get("web_sources", [])
         
-        prompt = f"""당신은 다양한 분야의 지식을 폭넓게 보유한 일반 지식 전문가입니다.
+        prompt = f"""당신은 다양한 분야의 지식을 폭넓게 보유한 금융 지식 전문가입니다. 대응 절차와 보호 방안을 잘 알고 분쟁 해결 절차 설명을 잘합니다.
 
 사용자 질문: {query}
 
@@ -352,8 +364,9 @@ class GeneralKnowledgeAgent(BaseWorkerAgent):
 1. 이해하기 쉬운 설명
 2. 관련 배경 지식 제공
 3. 다각도 관점 분석
-4. 실생활 적용 예시
-5. 추가 학습 방향 제시
+4. 법률, 약관, 판례, FAQ, 정책 정보 참조 및 분석
+5. 권익 보호
+5. 위 모든 내용을 분석하여 대응 절차와 권리 보호 방안 안내
 
 답변:"""
         

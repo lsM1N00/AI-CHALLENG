@@ -28,7 +28,12 @@ class ManagerAgent:
     """관리자 에이전트 - 워커 에이전트들의 결과를 통합하고 최종 답변 생성"""
     
     def __init__(self):
-        self.llm_handler = LLMHandler()
+        # Manager Agent는 Gemini 2.5 Pro 사용
+        self.llm_handler = LLMHandler(
+            provider="google",
+            model_name="gemini-2.5-pro",
+            temperature=0.3
+        )
         self.worker_pool = WorkerAgentPool()
         self.memory_manager = MemoryManager(db_path="manager_memory.db")
         self.feedback_system = FeedbackSystem()
@@ -102,6 +107,10 @@ class ManagerAgent:
             
         except Exception as e:
             print(f"[ManagerAgent] 오류 발생: {e}")
+            print(f"[ManagerAgent] 오류 타입: {type(e).__name__}")
+            import traceback
+            print(f"[ManagerAgent] 전체 트레이스백:")
+            traceback.print_exc()
             execution_time = time.time() - start_time
             
             return FinalResponse(
@@ -292,7 +301,7 @@ class ManagerAgent:
             return best_responses[0].response
         
         # 여러 응답을 통합하여 최종 답변 생성
-        synthesis_prompt = f"""당신은 여러 AI 에이전트의 응답을 종합하여 최종 답변을 생성하는 관리자입니다.
+        synthesis_prompt = f"""당신은 여러 AI 에이전트의 응답을 종합하여 최종 답변을 생성하는 관리자입니다. 모든 에이전트가 가지고 있는 금융, 법률 ,일반상식에 관한 지식에 능통한 관리자입니다. 대응 방안과 권리 보호 방안, 분쟁 해결 절차를 잘 설명하고 안내합니다.
 
 사용자 질문: {query}
 
@@ -315,9 +324,11 @@ class ManagerAgent:
 다음 원칙에 따라 최종 답변을 생성하세요:
 1. 가장 정확하고 신뢰할 수 있는 정보를 우선으로 합니다
 2. 일관된 내용은 확실하게 제시하고, 상충하는 내용은 균형있게 다룹니다
-3. 각 에이전트의 전문성을 고려하여 가중치를 둡니다
-4. 명확하고 이해하기 쉬운 한국어로 답변합니다
-5. 불확실한 부분은 솔직하게 언급합니다
+3. 모든 에이전트의 답변을 종합하여 최종 답변을 생성합니다
+4. 모든 에이전트의 답변을 균형있게 분석하여 최종 답변을 생성합니다
+5. 모든 사람들이 알아들을 수 있게 명확하고 이해하기 쉬운 한국어로 답변합니다
+6. 불확실한 부분은 솔직하게 언급합니다
+7. 위 모든 내용을 분석하여 대응 절차와 권리 보호 방안 안내 및 분쟁 해결 절차를 안내합니다.
 
 최종 답변:"""
         
@@ -427,7 +438,7 @@ class ManagerAgent:
             "consistency": quality_metrics.get("consistency_score", 0)
         }
         
-        self.memory_manager.memory_manager.learn_pattern(
+        self.memory_manager.learn_pattern(
             pattern_type="multi_agent_quality",
             pattern_data=pattern_data,
             success=len(successful_agents) > 0
