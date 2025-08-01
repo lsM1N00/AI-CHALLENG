@@ -1,231 +1,277 @@
-# 🤖 AI 멀티 에이전트 시스템
+# 🚀 LangGraph 멀티 에이전트 시스템
 
-3개의 전문 에이전트와 1개의 관리자 에이전트로 구성된 고도화된 AI 시스템입니다.
+이 프로젝트는 기존 멀티 에이전트 시스템을 **LangGraph**를 사용하여 더욱 체계적이고 확장 가능한 그래프 기반 워크플로우로 개선한 버전입니다.
 
-## 🏗️ 시스템 아키텍처
+## 🆕 LangGraph 버전의 주요 개선사항
+
+### 🎯 핵심 장점
+- **그래프 기반 워크플로우**: 복잡한 에이전트 간 상호작용을 체계적으로 관리
+- **병렬 처리 최적화**: 모든 워커 에이전트가 동시에 실행되어 성능 향상
+- **상태 기반 관리**: LangGraph의 AgentState로 전체 워크플로우 상태 추적
+- **조건부 라우팅**: 상황에 따른 동적 워크플로우 제어
+- **확장성**: 새로운 노드와 에이전트를 쉽게 추가 가능
+- **오류 복구**: 개별 노드 실패 시 전체 시스템 안정성 유지
+
+### 🏗️ 아키텍처 구조
+
+```
+📦 LangGraph 멀티 에이전트 시스템
+├── 🧠 langgraph_agent_state.py      # 상태 관리 클래스
+├── 🔧 langgraph_nodes.py            # 워크플로우 노드 함수들
+├── 🌐 langgraph_multi_agent_system.py # 메인 시스템 (StateGraph)
+├── 🚀 langgraph_main.py             # 실행 인터페이스
+└── 🧪 test_langgraph_system.py      # 테스트 파일
+```
+
+## 📊 워크플로우 다이어그램
 
 ```mermaid
-graph TB
-    User["👤 사용자"] --> Main["🚀 MultiAgentApp<br/>(multi_agent_main.py)"]
-    Main --> System["🏗️ MultiAgentSystem<br/>(multi_agent_system.py)"]
+graph TD
+    A[쿼리 분석<br/>analyze_query] --> B[법률 에이전트<br/>execute_legal_agent]
+    A --> C[기술 분석 에이전트<br/>execute_technical_agent]
+    A --> D[일반 지식 에이전트<br/>execute_general_agent]
     
-    System --> Analysis["📊 쿼리 분석"]
-    Analysis --> Health["🔍 시스템 상태 점검"]
-    Health --> Manager["👨‍💼 ManagerAgent<br/>(manager_agent.py)"]
+    B --> E[품질 분석<br/>quality_analysis]
+    C --> E
+    D --> E
     
-    Manager --> Pool["👥 WorkerAgentPool<br/>(worker_agents.py)"]
+    E --> F[최종 답변 생성<br/>generate_final_answer]
+    F --> G[END]
     
-    Pool --> Legal["⚖️ LegalExpert<br/>법률 전문 에이전트"]
-    Pool --> Tech["🔧 TechnicalAnalyst<br/>기술 분석 에이전트"]
-    Pool --> General["🌍 GeneralKnowledge<br/>일반 지식 에이전트"]
-    
-    Legal --> RAG1["📚 RAG 검색<br/>(document_retriever.py)"]
-    Legal --> Web1["🌐 웹 검색<br/>(web_search.py)"]
-    Legal --> LLM1["🤖 LLM 처리<br/>(llm_handler.py)"]
-    
-    Tech --> RAG2["📚 RAG 검색"]
-    Tech --> Web2["🌐 웹 검색"]
-    Tech --> LLM2["🤖 LLM 처리"]
-    
-    General --> RAG3["📚 RAG 검색"]
-    General --> Web3["🌐 웹 검색"]
-    General --> LLM3["🤖 LLM 처리"]
-    
-    RAG1 --> DB["🗄️ PostgreSQL<br/>+ pgvector"]
-    RAG2 --> DB
-    RAG3 --> DB
-    
-    Web1 --> Google["🔍 Google API"]
-    Web2 --> Google
-    Web3 --> Google
-    
-    LLM1 --> Response1["💬 응답 1"]
-    LLM2 --> Response2["💬 응답 2"]
-    LLM3 --> Response3["💬 응답 3"]
-    
-    Response1 --> Manager
-    Response2 --> Manager
-    Response3 --> Manager
-    
-    Manager --> Integration["🔄 응답 통합 및 품질 평가"]
-    Integration --> Memory["💾 MemoryManager<br/>(memory_manager.py)"]
-    Integration --> Feedback["📈 FeedbackSystem<br/>(feedback_system.py)"]
-    
-    Integration --> Final["✨ 최종 응답"]
-    Final --> User
-    
-    classDef userClass fill:#e1f5fe
-    classDef mainClass fill:#f3e5f5
-    classDef systemClass fill:#e8f5e8
-    classDef agentClass fill:#fff3e0
-    classDef toolClass fill:#fce4ec
-    classDef dataClass fill:#f1f8e9
-    
-    class User userClass
-    class Main,System mainClass
-    class Manager,Pool,Legal,Tech,General systemClass
-    class RAG1,RAG2,RAG3,Web1,Web2,Web3,LLM1,LLM2,LLM3 agentClass
-    class Memory,Feedback,DB,Google toolClass
-    class Analysis,Health,Integration,Final dataClass
-```
-
-## 📋 시스템 구성
-
-### 🎯 관리자 에이전트 (1개)
-- **역할**: 워커 에이전트들의 결과를 분석하고 최적의 답변 생성
-- **기능**: 품질 평가, 일관성 검증, 응답 통합
-
-### 🔧 워커 에이전트 (3개)
-1. **법률 전문 에이전트** - 금융법, 소비자보호법 전문
-2. **기술 분석 에이전트** - 시스템 아키텍처, 개발 전문  
-3. **일반 지식 에이전트** - 폭넓은 지식 기반 응답
-
-## 🚀 주요 기능
-
-- ✅ **멀티 에이전트 협업**: 3개 에이전트가 동시에 응답 생성
-- ✅ **웹 검색 + RAG**: 최신 정보와 문서 검색 결합
-- ✅ **메모리 관리**: 단기/장기 메모리로 학습 능력
-- ✅ **자기 수정**: 피드백 기반 성능 개선
-- ✅ **품질 보장**: 품질 등급과 일관성 검증
-
-## 📁 파일 구조
-
-```
-📦 프로젝트
-├── 🎯 multi_agent_main.py      # 메인 애플리케이션
-├── 🤖 multi_agent_system.py    # 시스템 오케스트레이터
-├── 👔 manager_agent.py         # 관리자 에이전트
-├── 👷 worker_agents.py         # 워커 에이전트들
-├── 🧠 memory_manager.py        # 메모리 관리
-├── 🔄 feedback_system.py       # 피드백 시스템
-├── 🔗 llm_handler.py          # LLM 핸들러
-├── 🔍 web_search.py           # 웹 검색
-├── 📚 document_retriever.py    # 문서 검색 (RAG)
-├── 📄 pdf_to_db.py            # PDF 문서 처리
-├── ⚙️ config.py              # 설정 파일
-└── 📦 requirements.txt        # 필요 패키지
+    style A fill:#e1f5fe
+    style E fill:#f3e5f5
+    style F fill:#e8f5e8
+    style G fill:#ffebee
 ```
 
 ## 🛠️ 설치 및 설정
 
-### 1. 패키지 설치
+### 1. 새로운 의존성 설치
+
 ```bash
+# LangGraph 패키지 설치
+pip install langgraph>=0.3.0 langchain-core>=0.3.0
+
+# 또는 requirements.txt 업데이트 후
 pip install -r requirements.txt
 ```
 
-### 2. 환경 변수 설정 (.env 파일 생성)
-```env
-# LLM API 키
-GROQ_API_KEY=your_groq_api_key_here
+### 2. 환경 변수 설정
 
-# 웹 검색 (선택사항)
-GOOGLE_API_KEY=your_google_api_key_here
-SEARCH_ENGINE_ID=your_search_engine_id_here
+기존 환경변수 설정을 그대로 사용:
 
-# 데이터베이스 (기본값 사용 가능)
-DB_NAME=financedb
-DB_USER=postgres
-DB_PASSWORD=0717
-DB_HOST=localhost
-DB_PORT=5432
-```
-
-### 3. 데이터베이스 설정 (선택사항)
-- PostgreSQL + pgvector 설치
-- PDF 문서를 `laws_pdfs/` 폴더에 저장
-- `python pdf_to_db.py` 실행하여 문서 임베딩
-
-## 🎮 사용법
-
-### 기본 실행
 ```bash
-python multi_agent_main.py
+# .env 파일
+OPENAI_API_KEY=your_openai_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+GOOGLE_API_KEY=your_google_api_key
+# ... 기타 설정들
 ```
 
-### 실행 모드 선택
-1. **대화형 모드** (기본) - 질문하고 답변 받기
-2. **데모 모드** - 미리 정의된 질문으로 테스트
-3. **배치 테스트** - 여러 질문 동시 처리
-4. **시스템 상태** - 성능 및 상태 확인
+## 🚀 사용법
 
-### 명령어
-- `help`: 도움말 표시
-- `status`: 시스템 상태 확인
-- `reset`: 시스템 리셋
-- `exit` / `quit`: 종료
+### 1. 기본 실행
 
-## 💡 사용 예시
-
-### 법률 질문
-```
-질문: 금융소비자보호법 제20조란 무엇인가요?
-→ 법률 전문 에이전트가 주도하여 정확한 법조문 제공
+```bash
+# LangGraph 시스템 실행
+python langgraph_main.py
 ```
 
-### 기술 질문
+### 2. 실행 모드 선택
+
 ```
-질문: 멀티 에이전트 시스템은 어떻게 구현하나요?
-→ 기술 분석 에이전트가 아키텍처와 구현 방법 설명
+🚀 LangGraph 멀티 에이전트 시스템
+==================================================
+
+사용 가능한 모드:
+1. 대화형 모드 (interactive)    # 실시간 대화
+2. 배치 테스트 (batch)         # 여러 쿼리 동시 처리
+3. 시스템 비교 (compare)       # 기존 시스템과 성능 비교
+4. 단일 테스트 (single)        # 단일 쿼리 테스트
+
+실행할 모드를 선택하세요 (1-4):
 ```
 
-### 일반 질문
+### 3. 프로그래밍 방식 사용
+
+```python
+import asyncio
+from langgraph_multi_agent_system import LangGraphMultiAgentSystem
+
+async def main():
+    # 시스템 초기화
+    system = LangGraphMultiAgentSystem()
+    
+    # 단일 쿼리 처리
+    result = await system.process_user_query("금융소비자보호법이란 무엇인가요?")
+    
+    print(f"답변: {result['final_answer']}")
+    print(f"성공: {result['success']}")
+    print(f"실행 시간: {result['execution_time']:.2f}초")
+
+asyncio.run(main())
 ```
-질문: 최신 AI 기술 동향은?
-→ 일반 지식 에이전트가 폭넓은 정보 제공
+
+### 4. 배치 처리
+
+```python
+# 여러 쿼리 동시 처리
+queries = [
+    "금융소비자보호법에 대해 설명해주세요",
+    "대환대출이란 무엇인가요?",
+    "금융감독원 신고 방법은?"
+]
+
+results = await system.batch_process_queries(queries)
+for i, result in enumerate(results):
+    print(f"쿼리 {i+1}: {'성공' if result['success'] else '실패'}")
 ```
 
-## 📊 품질 지표
+## 🔧 시스템 구성 요소
 
-각 응답에는 다음 정보가 제공됩니다:
+### 1. AgentState (상태 관리)
+```python
+@dataclass
+class AgentState:
+    query: str                          # 사용자 쿼리
+    legal_response: Dict[str, Any]      # 법률 에이전트 응답
+    technical_response: Dict[str, Any]   # 기술 분석 응답
+    general_response: Dict[str, Any]     # 일반 지식 응답
+    quality_analysis: Dict[str, Any]     # 품질 분석 결과
+    final_answer: str                   # 최종 답변
+    # ... 기타 상태 필드들
+```
 
-- **품질 등급**: EXCELLENT / GOOD / FAIR / POOR
-- **일관성 점수**: 에이전트 간 합의 수준
-- **참여 에이전트**: 답변에 기여한 에이전트들
-- **소스 정보**: 참조한 문서 및 웹 자료
-- **추천 사항**: 더 나은 질문을 위한 제안
+### 2. 워크플로우 노드들
 
-## 🔧 커스터마이징
+- **analyze_query**: 쿼리 복잡도 분석
+- **execute_legal_agent**: 법률 전문 에이전트 실행
+- **execute_technical_agent**: 기술 분석 에이전트 실행
+- **execute_general_agent**: 일반 지식 에이전트 실행
+- **quality_analysis**: 응답 품질 분석 및 선별
+- **generate_final_answer**: 최종 답변 통합 생성
 
-### 새로운 에이전트 추가
-1. `worker_agents.py`에서 `BaseWorkerAgent` 상속
-2. `_get_specialized_prompt()` 메서드 구현
-3. `WorkerAgentPool`에 에이전트 추가
+### 3. 병렬 실행 구조
 
-### 품질 기준 조정
-`manager_agent.py`의 `quality_thresholds` 값 수정
+```python
+# 모든 에이전트가 동시에 실행됨
+workflow.add_edge("analyze_query", "execute_legal_agent")
+workflow.add_edge("analyze_query", "execute_technical_agent") 
+workflow.add_edge("analyze_query", "execute_general_agent")
 
-### 메모리 설정 변경
-`memory_manager.py`의 `max_short_term_size` 및 DB 설정 조정
+# 모든 에이전트 완료 후 품질 분석
+workflow.add_edge("execute_legal_agent", "quality_analysis")
+workflow.add_edge("execute_technical_agent", "quality_analysis")
+workflow.add_edge("execute_general_agent", "quality_analysis")
+```
 
-## 🚨 문제 해결
+## 📊 성능 비교
 
-### API 키 없음
-- 웹 검색 API 키가 없어도 기본 동작 가능
-- 더미 결과로 대체되어 시스템 계속 작동
+### 기존 시스템 vs LangGraph 시스템
 
-### 데이터베이스 연결 실패
-- 문서 검색 없이도 웹 검색으로 동작 가능
-- PostgreSQL 설치 후 재시도
+| 항목 | 기존 시스템 | LangGraph 시스템 | 개선사항 |
+|------|-------------|------------------|----------|
+| **워크플로우 관리** | 수동 관리 | StateGraph 자동 관리 | ✅ 체계적 |
+| **병렬 처리** | 제한적 | 완전 병렬 | ✅ 성능 향상 |
+| **상태 추적** | 분산된 상태 | 중앙화된 AgentState | ✅ 일관성 |
+| **확장성** | 코드 수정 필요 | 노드 추가만으로 확장 | ✅ 유연성 |
+| **오류 처리** | 전체 시스템 영향 | 개별 노드 격리 | ✅ 안정성 |
+| **디버깅** | 복잡함 | 각 노드별 추적 가능 | ✅ 편의성 |
 
-### LLM API 오류
-- API 키 확인 및 네트워크 상태 점검
-- 모델 이름이 올바른지 확인
+## 🧪 테스트
 
-## 📈 성능 최적화
+### 1. 자동 테스트 실행
 
-- **동시 처리**: 3개 에이전트가 병렬로 작업
-- **캐싱**: 메모리 시스템으로 중복 질문 최적화
-- **학습**: 피드백 시스템으로 지속적인 성능 개선
-- **품질 필터링**: 저품질 응답 자동 제외
+```bash
+# pytest를 사용한 상세 테스트
+pytest test_langgraph_system.py -v
 
-## 🔮 향후 개선 계획
+# 성능 테스트만 실행
+python test_langgraph_system.py
+```
 
-- [ ] 더 많은 전문 에이전트 추가
-- [ ] 다양한 LLM 모델 지원 확대
-- [ ] 웹 인터페이스 개발
-- [ ] 성능 모니터링 대시보드
-- [ ] 실시간 협업 기능
+### 2. 테스트 항목
+
+- ✅ 시스템 초기화
+- ✅ 단일 쿼리 처리
+- ✅ 복잡한 쿼리 처리
+- ✅ 배치 처리
+- ✅ 오류 처리
+- ✅ 시스템 상태 확인
+- ✅ 시스템 리셋
+
+### 3. 성능 벤치마크
+
+```bash
+🚀 성능 테스트 시작...
+✅ 쿼리 1: 8.45초
+✅ 쿼리 2: 7.23초
+✅ 쿼리 3: 9.12초
+✅ 쿼리 4: 8.67초
+
+🔄 배치 처리 성능 테스트...
+📊 배치 결과: 4/4 성공
+⏱️ 배치 시간: 12.34초
+⚡ 평균 시간: 3.09초/쿼리
+```
+
+## 📈 모니터링 및 디버깅
+
+### 1. 시스템 상태 확인
+
+```python
+# 시스템 상태 조회
+status = system.get_system_status()
+print(f"워크플로우 노드: {status['workflow_info']['nodes']}")
+print(f"시스템 건강도: {status['system_health']}")
+```
+
+### 2. 워크플로우 추적
+
+```python
+# 각 노드별 실행 상태 로깅
+[QueryAnalysis] 쿼리 분석 시작: 금융소비자보호법이란?
+[QueryAnalysis] 분석 완료. 복잡도: 0.30
+[LegalAgent] 법률 에이전트 실행 시작
+[TechnicalAgent] 기술 분석 에이전트 실행 시작
+[GeneralAgent] 일반 지식 에이전트 실행 시작
+...
+```
+
+## 🔮 향후 확장 계획
+
+### 1. 새로운 노드 추가
+- **사전 검증 노드**: 쿼리 유효성 검사
+- **후처리 노드**: 답변 포맷팅 및 검증
+- **캐싱 노드**: 자주 묻는 질문 캐시
+
+### 2. 고급 라우팅
+```python
+# 조건부 라우팅 예시
+def route_based_on_complexity(state: AgentState):
+    if state.complexity_score > 0.8:
+        return "complex_processing"
+    else:
+        return "simple_processing"
+```
+
+### 3. 동적 에이전트 선택
+- 쿼리 유형에 따른 에이전트 선택
+- 에이전트 성능 기반 동적 라우팅
+
+## 🤝 기여 방법
+
+1. **새로운 노드 추가**: `langgraph_nodes.py`에 노드 함수 추가
+2. **워크플로우 수정**: `langgraph_multi_agent_system.py`에서 엣지 수정
+3. **상태 필드 추가**: `langgraph_agent_state.py`에 새 상태 필드 추가
+4. **테스트 작성**: `test_langgraph_system.py`에 테스트 케이스 추가
+
+## 📞 지원
+
+- **문제 보고**: GitHub Issues에 문제 등록
+- **기능 요청**: 새로운 기능 아이디어 제안
+- **문서 개선**: README 및 주석 개선 제안
 
 ---
 
-**📧 문의**: 시스템 사용 중 문제가 있으면 이슈를 등록해주세요. 
+**LangGraph를 사용한 차세대 멀티 에이전트 시스템으로 더욱 강력하고 유연한 AI 서비스를 구축하세요! 🚀** 

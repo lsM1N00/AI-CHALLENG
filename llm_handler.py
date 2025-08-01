@@ -80,13 +80,13 @@ class LLMHandler:
         else:
             raise Exception(f"지원하지 않는 provider입니다: {self.provider}")
 
-    def get_response(self, prompt: str, max_tokens: int = 1024) -> str:
+    def get_response(self, prompt: str, max_tokens: int = 4096) -> str:
         """
         프롬프트를 기반으로 LLM 응답 생성
         
         Args:
             prompt: 입력 프롬프트
-            max_tokens: 최대 토큰 수
+            max_tokens: 최대 토큰 수 (기본값을 4096으로 증가)
             
         Returns:
             LLM 응답 텍스트
@@ -119,23 +119,12 @@ class LLMHandler:
                     return str(message.content)
                 
             elif self.provider == "google":
-                # test_anthropic.py 방식과 동일하게 API 호출
+                # Google API에서 기본 설정 사용
                 response = self.client.models.generate_content(
                     model=self.model,
                     contents=prompt
                 )
                 return response.text
-                
-            # elif self.provider == "groq":  # Groq 미사용
-            #     response = self.client.chat.completions.create(
-            #         messages=[{"role": "user", "content": prompt}],
-            #         model=self.model,
-            #         temperature=self.temperature,
-            #         max_tokens=max_tokens,
-            #         top_p=0.9,
-            #         stream=False,
-            #     )
-            #     return response.choices[0].message.content
                 
             else:
                 return f"지원하지 않는 provider입니다: {self.provider}"

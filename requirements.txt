@@ -26,5 +26,9 @@ sentence-transformers>=4.1.0
 # === PDF 처리 (문서 처리용, 선택사항) ===
 PyMuPDF>=1.23.0
 
+# === LangGraph (그래프 기반 멀티 에이전트) ===
+langgraph>=0.3.0
+langchain-core>=0.3.0
+
 # === 기타 유틸리티 ===
 numpy>=1.24.0 

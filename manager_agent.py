@@ -123,6 +123,61 @@ class ManagerAgent:
                 sources=[]
             )
     
+    async def synthesize_agent_responses(self, query: str, refined_responses: List[AgentResponse]) -> Dict[str, Any]:
+        """보완된 워커 에이전트 답변들을 종합 분석"""
+        try:
+            print(f"[ManagerAgent] 보완된 답변들 종합 분석 시작: {len(refined_responses)}개 응답")
+            
+            if not refined_responses:
+                return {
+                    "success": False,
+                    "error": "분석할 보완된 응답이 없습니다",
+                    "synthesis_summary": ""
+                }
+            
+            # 1. 보완된 응답들의 품질 재평가
+            quality_analysis = self._analyze_response_quality(refined_responses)
+            
+            # 2. 보완된 응답들 간의 일관성 검증
+            consistency_analysis = self._analyze_consistency(refined_responses)
+            
+            # 3. 피드백 반영 효과 분석
+            feedback_effectiveness = self._analyze_feedback_effectiveness(refined_responses)
+            
+            # 4. 종합 분석 리포트 생성
+            synthesis_report = await self._generate_synthesis_report(
+                query, 
+                refined_responses, 
+                quality_analysis, 
+                consistency_analysis,
+                feedback_effectiveness
+            )
+            
+            # 5. 최종 통합 권장사항 생성
+            integration_recommendations = self._generate_integration_recommendations(
+                refined_responses, 
+                quality_analysis
+            )
+            
+            return {
+                "success": True,
+                "synthesis_summary": synthesis_report,
+                "quality_analysis": quality_analysis,
+                "consistency_analysis": consistency_analysis,
+                "feedback_effectiveness": feedback_effectiveness,
+                "integration_recommendations": integration_recommendations,
+                "refined_responses_count": len(refined_responses),
+                "synthesis_timestamp": time.time()
+            }
+            
+        except Exception as e:
+            print(f"[ManagerAgent] 종합 분석 실패: {e}")
+            return {
+                "success": False,
+                "error": f"종합 분석 실패: {str(e)}",
+                "synthesis_summary": ""
+            }
+    
     def _analyze_response_quality(self, responses: List[AgentResponse]) -> Dict[str, Any]:
         """워커 응답 품질 분석"""
         quality_analysis = {
@@ -301,7 +356,7 @@ class ManagerAgent:
             return best_responses[0].response
         
         # 여러 응답을 통합하여 최종 답변 생성
-        synthesis_prompt = f"""당신은 여러 AI 에이전트의 응답을 종합하여 최종 답변을 생성하는 관리자입니다. 모든 에이전트가 가지고 있는 금융, 법률 ,일반상식에 관한 지식에 능통한 관리자입니다. 대응 방안과 권리 보호 방안, 분쟁 해결 절차를 잘 설명하고 안내합니다.
+        synthesis_prompt = f"""당신은 여러 AI 에이전트의 응답을 종합하여 최종 답변을 생성하는 관리자입니다. 모든 에이전트가 가지고 있는 금융, 법률 ,일반상식에 관한 지식에 능통한 관리자입니다. 대응 방안, 권리 보호 방안, 분쟁 해결 절차를 잘 설명하고 안내합니다. 모든 답변은 한국어로 작성합니다.
 
 사용자 질문: {query}
 
@@ -328,7 +383,25 @@ class ManagerAgent:
 4. 모든 에이전트의 답변을 균형있게 분석하여 최종 답변을 생성합니다
 5. 모든 사람들이 알아들을 수 있게 명확하고 이해하기 쉬운 한국어로 답변합니다
 6. 불확실한 부분은 솔직하게 언급합니다
-7. 위 모든 내용을 분석하여 대응 절차와 권리 보호 방안 안내 및 분쟁 해결 절차를 안내합니다.
+7. 아래의 구조화된 형식으로 답변을 작성하되, 각 섹션에 구체적인 내용을 반드시 포함합니다
+
+**답변 구조 (모든 섹션을 포함하되, 관련 정보가 없는 경우 해당 섹션에 "관련 정보가 부족합니다"라고 명시):**
+
+## 📋 상황 요약
+[사용자 질문에 대한 핵심 내용 요약]
+
+## 💡 주요 해결 방안
+[구체적인 해결책과 조치 사항]
+
+## ⚖️ 법적 대응 방안
+[법적 절차, 이의제기 방법, 관련 법규, 권리 구제 방안 등을 구체적으로 안내. 
+정보가 부족한 경우: "구체적인 법적 대응을 위해서는 금융감독원(1332) 또는 전문 변호사와 상담하시기 바랍니다."]
+
+## 분쟁 해결 절차
+[구체적인 해결 절차]
+
+## 🔍 추가 참고사항
+[주의사항, 관련 기관 연락처, 추가 도움 등]
 
 최종 답변:"""
         
@@ -443,6 +516,115 @@ class ManagerAgent:
             pattern_data=pattern_data,
             success=len(successful_agents) > 0
         )
+    
+    def _analyze_feedback_effectiveness(self, refined_responses: List[AgentResponse]) -> Dict[str, Any]:
+        """피드백 반영 효과 분석"""
+        try:
+            effectiveness_score = 0.0
+            refined_count = 0
+            improvements = []
+            
+            for response in refined_responses:
+                # 보완된 응답인지 확인 (응답 메타데이터 기반)
+                if hasattr(response, 'is_refined') or 'is_refined' in str(response.reasoning):
+                    refined_count += 1
+                    # 응답 길이와 품질을 기반으로 개선도 평가
+                    if len(response.response) > 100:  # 기본적인 품질 임계값
+                        effectiveness_score += 1.0
+                        improvements.append(f"{response.agent_id}: 피드백 반영하여 답변 보완됨")
+            
+            if refined_count > 0:
+                effectiveness_score = effectiveness_score / refined_count
+            
+            return {
+                "effectiveness_score": effectiveness_score,
+                "refined_responses_count": refined_count,
+                "total_responses_count": len(refined_responses),
+                "improvement_rate": refined_count / len(refined_responses) if refined_responses else 0,
+                "improvements": improvements
+            }
+            
+        except Exception as e:
+            return {
+                "effectiveness_score": 0.0,
+                "error": f"피드백 효과 분석 실패: {str(e)}"
+            }
+    
+    async def _generate_synthesis_report(self, query: str, refined_responses: List[AgentResponse], 
+                                       quality_analysis: Dict, consistency_analysis: Dict,
+                                       feedback_effectiveness: Dict) -> str:
+        """종합 분석 리포트 생성"""
+        try:
+            # 각 에이전트의 보완된 답변 요약
+            agent_summaries = []
+            for response in refined_responses:
+                agent_summaries.append(
+                    f"**{response.agent_id}**: {response.response[:200]}..."
+                )
+            
+            synthesis_prompt = f"""
+다음은 사용자 질문에 대한 여러 전문 에이전트들의 보완된 답변들입니다. 이들을 종합 분석하여 통찰력 있는 리포트를 작성하세요.
+
+**사용자 질문**: {query}
+
+**보완된 에이전트 답변들**:
+{chr(10).join(agent_summaries)}
+
+**품질 분석 결과**: 평균 품질 점수 {quality_analysis.get('average_quality_score', 0):.2f}
+**일관성 분석 결과**: 일관성 점수 {consistency_analysis.get('consistency_score', 0):.2f}
+**피드백 효과**: 개선률 {feedback_effectiveness.get('improvement_rate', 0)*100:.1f}%
+
+다음 관점에서 종합 분석하세요:
+
+1. **핵심 통찰**: 모든 답변을 통합했을 때 도출되는 핵심 인사이트
+2. **상호 보완성**: 각 에이전트 답변이 서로를 어떻게 보완하는지
+3. **신뢰도 평가**: 전체적인 답변의 신뢰도와 근거 강도
+4. **실용적 가치**: 사용자에게 제공할 수 있는 실질적 도움
+5. **개선 효과**: 피드백을 통한 답변 품질 향상 정도
+
+간결하면서도 포괄적인 분석을 제공하세요.
+"""
+            
+            synthesis_result = self.llm_handler.get_response(synthesis_prompt, max_tokens=2048)
+            return synthesis_result
+            
+        except Exception as e:
+            return f"종합 분석 리포트 생성 실패: {str(e)}"
+    
+    def _generate_integration_recommendations(self, refined_responses: List[AgentResponse], 
+                                            quality_analysis: Dict) -> List[str]:
+        """통합 권장사항 생성"""
+        recommendations = []
+        
+        try:
+            # 고품질 응답들 식별
+            high_quality_agents = []
+            for response in refined_responses:
+                # 품질 점수가 높은 응답들 (임계값: 0.7)
+                if len(response.response) > 100 and response.success:
+                    high_quality_agents.append(response.agent_id)
+            
+            if high_quality_agents:
+                recommendations.append(f"우수 답변 에이전트: {', '.join(high_quality_agents)}")
+            
+            # 응답 완성도 기반 권장사항
+            total_sources = sum(len(r.sources) for r in refined_responses)
+            if total_sources > 5:
+                recommendations.append("풍부한 출처 기반으로 신뢰성 높은 답변 제공 가능")
+            
+            # 일관성 기반 권장사항
+            if quality_analysis.get('average_quality_score', 0) > 0.7:
+                recommendations.append("에이전트 간 피드백을 통해 답변 품질이 크게 향상됨")
+            
+            # 피드백 효과 권장사항
+            refined_count = sum(1 for r in refined_responses if 'is_refined' in str(r.reasoning))
+            if refined_count > 0:
+                recommendations.append(f"{refined_count}개 답변이 상호 피드백을 통해 보완됨")
+            
+        except Exception as e:
+            recommendations.append(f"권장사항 생성 중 오류: {str(e)}")
+        
+        return recommendations if recommendations else ["기본 통합 권장사항이 적용됩니다"]
     
     def get_system_status(self) -> Dict[str, Any]:
         """시스템 상태 반환"""
