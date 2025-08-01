@@ -54,39 +54,57 @@ class DocumentRetriever:
                 print(" 쿼리 임베딩 생성 실패")
                 return []
 
-            # 2. 유사도 검색 수행 (모든 테이블에서 검색)
-            sql = """
-            SELECT id, context as content, metadata, 1 - (vector <=> %s::vector) AS similarity, 'laws' as table_name
-            FROM laws
-            UNION ALL
-            SELECT id, context as content, metadata, 1 - (vector <=> %s::vector) AS similarity, 'rules' as table_name
-            FROM rules
-            UNION ALL
-            SELECT id, context as content, metadata, 1 - (vector <=> %s::vector) AS similarity, 'terms' as table_name
-            FROM terms
-            UNION ALL
-            SELECT id, context as content, metadata, 1 - (vector <=> %s::vector) AS similarity, 'enfor' as table_name
-            FROM enfor
-            ORDER BY similarity DESC
-            LIMIT %s;
-            """
+            # 2. 코사인 유사도 기반 KNN 검색 수행 (각 테이블별 최적화된 검색)
+            all_results = []
+            tables = ['laws', 'rules', 'terms', 'enfor']
+            
+            # 성능 최적화: 각 테이블별로 더 적은 수를 검색
+            per_table_limit = min(top_k * 2, 20)  # 테이블당 최대 20개
             
             with self.conn.cursor() as cursor:
-                cursor.execute(sql, (query_embedding, query_embedding, query_embedding, query_embedding, top_k))
-                results = cursor.fetchall()
+                for table_name in tables:
+                    # 빈 테이블 건너뛰기 (성능 최적화)
+                    cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                    count = cursor.fetchone()[0]
+                    if count == 0:
+                        continue
+                    
+                    # 각 테이블에서 개별 KNN 검색 (HNSW 인덱스 최적화)
+                    table_sql = f"""
+                    SELECT id, context as content, metadata, vector <=> %s::vector AS distance, '{table_name}' as table_name
+                    FROM {table_name}
+                    ORDER BY vector <=> %s::vector
+                    LIMIT %s;
+                    """
+                    
+                    try:
+                        cursor.execute(table_sql, (query_embedding, query_embedding, per_table_limit))
+                        table_results = cursor.fetchall()
+                        all_results.extend(table_results)
+                        print(f"🔍 {table_name}: {len(table_results)}개 결과")
+                    except Exception as e:
+                        print(f"⚠️ {table_name} 테이블 검색 실패: {e}")
+                        continue
                 
-                documents = []
-                for row in results:
-                    documents.append({
-                        "id": row[0],
-                        "content": row[1],
-                        "metadata": row[2],
-                        "similarity": float(row[3]),
-                        "table_name": row[4]
-                    })
+            # 모든 결과를 거리순으로 정렬하고 상위 top_k개 선택
+            all_results.sort(key=lambda x: float(x[3]))  # 거리(distance) 기준 오름차순 정렬
+            results = all_results[:top_k]  # 상위 top_k개 선택
+            
+            documents = []
+            for row in results:
+                distance = float(row[3])
+                similarity = 1.0 - distance  # 거리를 유사도로 변환
+                documents.append({
+                    "id": row[0],
+                    "content": row[1],
+                    "metadata": row[2],
+                    "similarity": similarity,
+                    "distance": distance,  # 디버깅용 거리값도 포함
+                    "table_name": row[4]
+                })
                 
-                print(f"📚 문서 검색 완료: {len(documents)}개 결과")
-                return documents
+            print(f"📚 KNN 검색 완료: {len(documents)}개 결과")
+            return documents
                 
         except Exception as e:
             print(f"❌ 문서 검색 오류: {e}")

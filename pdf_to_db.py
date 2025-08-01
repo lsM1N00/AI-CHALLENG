@@ -1005,6 +1005,21 @@ def main():
                 """)
                 logging.info(f"Table '{table_name}' is ready.")
             
+            # 모든 테이블에 벡터 인덱스 자동 생성
+            for table_name in tables:
+                try:
+                    index_name = f"{table_name}_vector_hnsw_idx"
+                    cur.execute(f"""
+                    CREATE INDEX IF NOT EXISTS {index_name} 
+                    ON {table_name} 
+                    USING hnsw (vector vector_cosine_ops)
+                    """)
+                    logging.info(f"Vector index '{index_name}' is ready for table '{table_name}'.")
+                except Exception as e:
+                    logging.warning(f"벡터 인덱스 생성 실패 ({table_name}): {e}")
+                    # 인덱스 생성 실패해도 계속 진행
+                    pass
+            
             conn.commit()
 
             # 각 디렉토리의 모든 PDF 파일 처리

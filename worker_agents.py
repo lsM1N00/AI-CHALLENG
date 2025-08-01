@@ -215,7 +215,7 @@ class LegalExpertAgent(BaseWorkerAgent):
             "max_tokens": 1024
         }
         super().__init__("LegalExpert", model_config, memory_manager, feedback_system)
-        self.specializations = ["법률", "규정", "시행령", "약관", "조항", "금융법", "소비자보호"]
+        self.specializations = ["법률", "규정", "시행령", "약관", "조항", "금융법", "소비자보호", "판례", "사례"]
     
     def _setup_llm_handler(self) -> LLMHandler:
         """Google Gemini 2.5 모델 설정"""
@@ -230,13 +230,24 @@ class LegalExpertAgent(BaseWorkerAgent):
         rag_sources = context.get("rag_sources", [])
         web_sources = context.get("web_sources", [])
         
-        prompt = f"""당신은 대한민국 법률 전문가입니다. 모든 법에 능통합니다. 대응 절차와 보호 방안을 잘 알고 설명을 잘합니다.
+        prompt = f"""
+# Role: 당신은 모든 법에 능통하고 법적 대응 절차와 보호 방안 그리고 분쟁 해결 절차를 명확하고 신뢰성 있게 안내하는 대한민국 벌률 전문가입니다.
 
-사용자 질문: {query}
+# Action:
+- 아래 사용자 질문과 함께 제공된 법률 문서 및 웹 검색 정보를 종합적으로 분석하고, 관련 법 조문, 시행령, 약관, 판례 등을 기반으로 실무적으로 유효한 대응 절차와 보호 방안을 작성하시오.
 
-제공된 정보:
+# Constraints: 
+- 아래 문서 정보를 반드시 참조하여 답변하시오.
+- 관련 법적 근거 명시하여 답변하시오
+- 정확한 법 조문 인용하시오
+- 실무적 적용 방안을 반드시 포함하여 답변하시오.
+- 법률과 시행령은 하나의 해석 체계로 간주하시오.
+- 문서 내용을 무시하거나 자의적으로 생성하지 마시오.
+
+# Context: 
+- 사용자 질문: {query}
+- 법률 문서:{len(rag_sources)}건, 웹 검색 결과:{len(web_sources)}건
 """
-        
         if rag_sources:
             prompt += "\n[법률 문서 정보]\n"
             for idx, source in enumerate(rag_sources[:3], 1):
@@ -248,16 +259,9 @@ class LegalExpertAgent(BaseWorkerAgent):
                 prompt += f"{idx}. {source.get('title', '')}: {source.get('snippet', '')}\n"
         
         prompt += """
-법률 전문가로서 다음 원칙에 따라 답변하세요:
-1. 정확한 법조문 인용
-2. 판례나 사례, FAQ 참조
-3. 법적 근거 명시
-4. 실무적 적용 방안 제시
-5. 법률과 시행령은 하나로 보고 판단
-6. 약관 참조
-7. 위 모든 내용을 분석하여 대응 절차와 권리 보호 방안 안내
 
-답변:"""
+
+답변: """
         
         return prompt
 
@@ -272,7 +276,7 @@ class TechnicalAnalystAgent(BaseWorkerAgent):
             "max_tokens": 1024
         }
         super().__init__("TechnicalAnalyst", model_config, memory_manager, feedback_system)
-        self.specializations = ["분석", "판례", "사례", "FAQ", "대응안내", "소비자보호"]
+        self.specializations = ["분석", "판례", "사례", "FAQ", "대응안내", "소비자보호", "민원분석", "보호방안", "분쟁해결절차"]
     
     def _setup_llm_handler(self) -> LLMHandler:
         """Anthropic Claude 4 Sonnet 모델 설정"""
@@ -287,11 +291,21 @@ class TechnicalAnalystAgent(BaseWorkerAgent):
         rag_sources = context.get("rag_sources", [])
         web_sources = context.get("web_sources", [])
         
-        prompt = f"""당신은 사례, 판례, FAQ 분석에 능통한 분석 전문가 입니다. 대응 절차와 보호 방안을 잘 알고 설명을 잘합니다.
+        prompt = f"""
+# Role: 당신은 민원 분석 내규, FAQ 분석에 능통하고 대응 절차와 보호 방안 그리고 분쟁 해결 절차를 명확하고 신뢰성 있게 안내하는 분석 전문가 입니다.
 
-사용자 질문: {query}
+# Action:
+- 아래 사용자 질문과 함께 제공된 법률 문서 및 웹 검색 정보를 종합적으로 분석하고 관련 사례, 금융기관 FAQ 등을 기반으로 실무적으로 유효한 대응 절차와 보호 방안을 작성하시오.
 
-제공된 정보:
+# Constraints:
+- 반드시 아래 제공된 문서들을 참조하시오.
+- 사례, FAQ 분석에 근거를 명시하시오.
+- 은행과 금융감독원 등의 금융기관 FAQ를 참조하시오.
+- 문서 내용을 무시하거나 자의적으로 생성하지 마시오.
+
+# Context:
+- 사용자 질문: {query}
+- 법률 문서:{len(rag_sources)}건, 웹 검색 결과:{len(web_sources)}건
 """
         
         if rag_sources:
@@ -305,14 +319,8 @@ class TechnicalAnalystAgent(BaseWorkerAgent):
                 prompt += f"{idx}. {source.get('title', '')}: {source.get('snippet', '')}\n"
         
         prompt += """
-분석 전문가로서 다음 관점에서 답변하세요:
-1. 사례와 판례, FAQ 분석
-2. 은행과 금융감독원 FAQ를 참조
-3. 판례와 사례를 참조
-4. 약관 참조
-5. 위 모든 내용을 분석하여 대응 절차와 권리 보호 방안 안내
 
-답변:"""
+답변: """
         
         return prompt
 
@@ -338,15 +346,27 @@ class GeneralKnowledgeAgent(BaseWorkerAgent):
         )
     
     def _get_specialized_prompt(self, query: str, context: Dict[str, Any]) -> str:
-        """일반 지식 전문 프롬프트"""
+        """금융 지식 전문 프롬프트"""
         rag_sources = context.get("rag_sources", [])
         web_sources = context.get("web_sources", [])
         
-        prompt = f"""당신은 다양한 분야의 지식을 폭넓게 보유한 금융 지식 전문가입니다. 대응 절차와 보호 방안을 잘 알고 분쟁 해결 절차 설명을 잘합니다.
+        prompt = f"""
+# Role: 당신은 금융 관련 지식뿐만 아니라 다양한 분야의 지식도 폭넓게 보유하고 대응 절차와 보호 방안 그리고 분쟁 해결 절차를 명확하고 신뢰성 있게 안내하는 금융 지식 전문가입니다.
 
-사용자 질문: {query}
+# Action:
+- 아래 사용자 질문과 함께 제공된 법률 문서 및 웹 검색 정보를 종합적으로 분석하고 관련 금융 지식 등을 기반으로 실무적으로 유효한 대응 절차와 보호 방안을 작성하시오.
 
-제공된 정보:
+# Constraints:
+- 반드시 아래 제공된 문서들을 참조하시오.
+- 관련 배경 지식을 제공하고 그 지식을 기반으로 대응 절차와 보호 방안을 작성하시오.
+- 정책 정보와 관련 지식을 참조하시오.
+- 다각도 관점으로 분석하고 생각하여 답변하시오.
+- 권익 보호를 최우선적으로 생각하여 답변하시오.
+- 문서 내용을 무시하거나 자의적으로 생성하지 마시오.
+
+# Context:
+- 사용자 질문: {query}
+- 법률 문서:{len(rag_sources)}건, 웹 검색 결과:{len(web_sources)}건
 """
         
         if rag_sources:
@@ -360,15 +380,8 @@ class GeneralKnowledgeAgent(BaseWorkerAgent):
                 prompt += f"{idx}. {source.get('title', '')}: {source.get('snippet', '')}\n"
         
         prompt += """
-일반 지식 전문가로서 다음 방식으로 답변하세요:
-1. 이해하기 쉬운 설명
-2. 관련 배경 지식 제공
-3. 다각도 관점 분석
-4. 법률, 약관, 판례, FAQ, 정책 정보 참조 및 분석
-5. 권익 보호
-5. 위 모든 내용을 분석하여 대응 절차와 권리 보호 방안 안내
 
-답변:"""
+답변 """
         
         return prompt
 

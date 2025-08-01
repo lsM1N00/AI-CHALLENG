@@ -71,21 +71,16 @@ class LLMHandler:
             except ImportError:
                 raise Exception("Google AI 라이브러리가 설치되지 않았습니다. 'pip install google-genai' 실행")
                 
-        # elif self.provider == "groq":  # Groq 미사용
-        #     try:
-        #         from groq import Groq
-        #         self.client = Groq(api_key=config.LLM_API_KEY)
-        #     except ImportError:
-        #         raise Exception("Groq 라이브러리가 설치되지 않았습니다. 'pip install groq' 실행")
         else:
             raise Exception(f"지원하지 않는 provider입니다: {self.provider}")
 
-    def get_response(self, prompt: str, max_tokens: int = 4096) -> str:
+    def get_response(self, prompt: str = None, messages: list = None, max_tokens: int = 4096) -> str:
         """
         프롬프트를 기반으로 LLM 응답 생성
         
         Args:
-            prompt: 입력 프롬프트
+            prompt: 입력 프롬프트 (단순 문자열)
+            messages: 구조화된 메시지 리스트 [{"role": "user", "content": "..."}]
             max_tokens: 최대 토큰 수 (기본값을 4096으로 증가)
             
         Returns:
@@ -96,8 +91,9 @@ class LLMHandler:
 
         try:
             if self.provider == "openai":
+                api_messages = messages if messages else [{"role": "user", "content": prompt}]
                 response = self.client.chat.completions.create(
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=api_messages,
                     model=self.model,
                     temperature=self.temperature,
                     max_tokens=max_tokens,
@@ -106,11 +102,11 @@ class LLMHandler:
                 return response.choices[0].message.content
                 
             elif self.provider == "anthropic":
-                # test_claude.py 방식과 정확히 동일하게 API 호출
+                api_messages = messages if messages else [{"role": "user", "content": prompt}]
                 message = self.client.messages.create(
                     model=self.model,
                     max_tokens=max_tokens,
-                    messages=[{"role": "user", "content": prompt}]
+                    messages=api_messages
                 )
                 # test_claude.py에서는 message.content를 직접 출력 (리스트일 수 있음)
                 if hasattr(message.content, '__iter__') and len(message.content) > 0:
@@ -119,10 +115,10 @@ class LLMHandler:
                     return str(message.content)
                 
             elif self.provider == "google":
-                # Google API에서 기본 설정 사용
+                # Google API - 단순 문자열 프롬프트 사용
                 response = self.client.models.generate_content(
                     model=self.model,
-                    contents=prompt
+                    contents=prompt if prompt else str(messages)
                 )
                 return response.text
                 
