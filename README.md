@@ -95,10 +95,6 @@ graph TB
 ```
 
 
-# code에 적용
-.env 파일에서 복사한 키 붙여넣기
-
-
 
 ```bash
 GOOGLE_API_KEY=복사한 api 키
