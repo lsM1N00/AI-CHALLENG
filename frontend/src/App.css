@@ -1,0 +1,520 @@
+/* 기본 리셋 및 전역 스타일 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 메인 컨테이너 */
+.main-container {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, rgba(248, 244, 225, 0.6) 0%, rgba(191, 146, 100, 0.2) 50%, rgba(116, 81, 45, 0.1) 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 헤더 */
+.main-header {
+  width: 100%;
+  background: rgba(248, 244, 225, 0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(116, 81, 45, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-container {
+  width: 100%;
+  padding: 0 24px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  width: 80px;
+  height: 56px;
+  background: rgba(248, 244, 225, 0.3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(254, 186, 23, 0.3);
+}
+
+.kb-logo-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: brightness(1.1) saturate(1.1);
+}
+
+.header-title {
+  font-weight: bold;
+  color: #4E1F00;
+  font-size: 28px !important;
+  line-height: 1.2;
+}
+
+.header-subtitle {
+  color: #74512D;
+  font-size: 18px !important;
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 연결 상태 */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 14px;
+}
+
+.connection-status.connected {
+  background: rgba(116, 81, 45, 0.2);
+  color: #4E1F00;
+  border: 1px solid rgba(116, 81, 45, 0.4);
+}
+
+.connection-status.disconnected {
+  background: rgba(191, 146, 100, 0.2);
+  color: #4E1F00;
+  border: 1px solid rgba(191, 146, 100, 0.4);
+}
+
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.connection-dot.connected {
+  background: #74512D;
+}
+
+.connection-dot.disconnected {
+  background: #BF9264;
+}
+
+/* 리셋 버튼 */
+.reset-button {
+  padding: 8px;
+  color: #74512D;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-button:hover {
+  color: #4E1F00;
+  background: rgba(116, 81, 45, 0.2);
+}
+
+/* 메인 컨텐츠 영역 */
+.main-content {
+  width: 100%;
+  display: flex;
+  height: calc(100vh - 100px);
+}
+
+/* 사이드바 */
+.sidebar {
+  width: 320px;
+  min-width: 320px;
+  background: rgba(116, 81, 45, 0.15);
+  backdrop-filter: blur(8px);
+  border-right: 1px solid rgba(116, 81, 45, 0.3);
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  margin-bottom: 24px;
+}
+
+.sidebar-card {
+  background: rgba(78, 31, 0, 0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(78, 31, 0, 0.1);
+  border: 1px solid rgba(116, 81, 45, 0.3);
+  padding: 24px;
+}
+
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #4E1F00;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 메인 채팅 영역 */
+.chat-container {
+  flex: 1;
+  width: calc(100% - 320px);
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-wrapper {
+  background: rgba(248, 244, 225, 0.6);
+  backdrop-filter: blur(8px);
+  margin: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(78, 31, 0, 0.1);
+  border: 1px solid rgba(191, 146, 100, 0.3);
+  flex: 1;
+  height: calc(100vh - 180px);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* 메시지 영역 스타일 개선 */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  padding-bottom: 120px;
+  min-height: 0;
+}
+
+/* 빈 채팅 화면의 버튼들을 중앙에 배치 */
+.empty-chat-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 400px);
+}
+
+/* 메시지 입력 영역을 하단 고정 */
+.message-input-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid rgba(191, 146, 100, 0.3);
+  padding: 24px;
+  background: rgba(248, 244, 225, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 0 0 12px 12px;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid rgba(191, 146, 100, 0.3);
+}
+
+.chat-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #4E1F00;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-counter {
+  font-size: 14px;
+  color: #74512D;
+}
+
+/* 로딩 애니메이션 */
+.loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.loading-dots div {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FEBA17;
+  animation: loading-bounce 1.4s ease-in-out infinite both;
+}
+
+.loading-dots div:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots div:nth-child(2) { animation-delay: -0.16s; }
+.loading-dots div:nth-child(3) { animation-delay: 0s; }
+
+@keyframes loading-bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* 버튼 스타일 개선 - KB 브랜딩 */
+.action-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 220px);
+  grid-template-rows: 1fr;
+  gap: 20px;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.action-button {
+  text-align: center;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  border: 1px solid;
+  cursor: pointer;
+  padding: 32px 24px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(248, 244, 225, 0.8);
+  border-color: rgba(191, 146, 100, 0.4);
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(254, 186, 23, 0.2);
+  background: rgba(248, 244, 225, 0.95);
+  border-color: rgba(191, 146, 100, 0.6);
+}
+
+.action-button-blue {
+  background: rgba(248, 244, 225, 0.8);
+  border-color: rgba(191, 146, 100, 0.4);
+}
+
+.action-button-blue:hover {
+  background: rgba(248, 244, 225, 0.95);
+  border-color: rgba(191, 146, 100, 0.6);
+}
+
+.action-button-green {
+  background: rgba(248, 244, 225, 0.8);
+  border-color: rgba(191, 146, 100, 0.4);
+}
+
+.action-button-green:hover {
+  background: rgba(248, 244, 225, 0.95);
+  border-color: rgba(191, 146, 100, 0.6);
+}
+
+.action-button-purple {
+  background: rgba(248, 244, 225, 0.8);
+  border-color: rgba(191, 146, 100, 0.4);
+}
+
+.action-button-purple:hover {
+  background: rgba(248, 244, 225, 0.95);
+  border-color: rgba(191, 146, 100, 0.6);
+}
+
+.action-button-orange {
+  background: rgba(248, 244, 225, 0.8);
+  border-color: rgba(191, 146, 100, 0.4);
+}
+
+.action-button-orange:hover {
+  background: rgba(248, 244, 225, 0.95);
+  border-color: rgba(191, 146, 100, 0.6);
+}
+
+.action-button-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, #74512D 0%, #4E1F00 100%);
+  color: white;
+}
+
+.action-button-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #4E1F00;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.action-button-blue .action-button-title {
+  color: #4E1F00;
+}
+
+.action-button-green .action-button-title {
+  color: #4E1F00;
+}
+
+.action-button-purple .action-button-title {
+  color: #4E1F00;
+}
+
+.action-button-orange .action-button-title {
+  color: #4E1F00;
+}
+
+.action-button-description {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* 메시지 입력 영역 개선 */
+.message-input-wrapper {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.message-input-field {
+  flex: 1;
+}
+
+.message-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 16px 20px;
+  border: 2px solid rgba(191, 146, 100, 0.4);
+  border-radius: 12px;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: vertical;
+  transition: all 0.2s ease;
+  background: rgba(78, 31, 0, 0.1);
+  font-family: inherit;
+  color: #4E1F00;
+}
+
+.message-textarea::placeholder {
+  color: #74512D;
+  opacity: 0.8;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.message-textarea:focus {
+  outline: none;
+  border-color: #FEBA17;
+  box-shadow: 0 0 0 3px rgba(254, 186, 23, 0.1);
+  background: rgba(78, 31, 0, 0.15);
+}
+
+.message-textarea:disabled {
+  background: rgba(78, 31, 0, 0.05);
+  color: #74512D;
+  cursor: not-allowed;
+  border-color: rgba(191, 146, 100, 0.3);
+}
+
+.send-button {
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  min-height: 56px;
+  white-space: nowrap;
+}
+
+.send-button:enabled {
+  background: linear-gradient(135deg, #BF9264 0%, #74512D 100%);
+  color: white;
+}
+
+.send-button:enabled:hover {
+  background: linear-gradient(135deg, #74512D 0%, #4E1F00 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(116, 81, 45, 0.3);
+}
+
+.send-button:disabled {
+  background: rgba(191, 146, 100, 0.3);
+  color: #74512D;
+  cursor: not-allowed;
+}
+
+/* 반응형 개선 */
+@media (max-width: 1024px) {
+  .action-buttons-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .action-button {
+    padding: 24px 16px;
+    min-height: 160px;
+  }
+  
+  .action-button-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+  }
+  
+  .action-button-title {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .action-buttons-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0 16px;
+  }
+  
+  .message-input-wrapper {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .send-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
