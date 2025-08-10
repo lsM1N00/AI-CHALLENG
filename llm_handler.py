@@ -41,7 +41,7 @@ class LLMHandler:
             "google": "gemini-2.5-pro",
 
         }
-        return defaults.get(self.provider, "gpt-4.1")  # 기본값: GPT-4.1
+        return defaults.get(self.provider, "gpt-4o")  # 기본값: GPT-4.1
     
     def _initialize_client(self):
         """provider별 클라이언트 초기화"""

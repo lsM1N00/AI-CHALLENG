@@ -204,29 +204,8 @@ async def main():
     try:
         app = LangGraphMain()
         
-        print("\n사용 가능한 모드:")
-        print("1. 대화형 모드 (interactive)")
-        print("2. 배치 테스트 (batch)")
-        print("3. 시스템 비교 (compare)")
-        print("4. 단일 테스트 (single)")
-        
-        mode = input("\n실행할 모드를 선택하세요 (1-4): ").strip()
-        
-        if mode == "1" or mode.lower() == "interactive":
-            await app.run_interactive_mode()
-        elif mode == "2" or mode.lower() == "batch":
-            await app.run_batch_test()
-        elif mode == "3" or mode.lower() == "compare":
-            query = input("비교할 쿼리를 입력하세요: ").strip()
-            if query:
-                await app.compare_with_original(query)
-        elif mode == "4" or mode.lower() == "single":
-            query = input("테스트할 쿼리를 입력하세요: ").strip()
-            if query:
-                await app.process_single_query(query)
-        else:
-            print("❌ 잘못된 선택입니다. 대화형 모드로 실행합니다.")
-            await app.run_interactive_mode()
+        # 바로 대화형 모드로 시작
+        await app.run_interactive_mode()
             
     except Exception as e:
         print(f"❌ 시스템 실행 중 오류 발생: {e}")
