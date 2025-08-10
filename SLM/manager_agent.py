@@ -28,10 +28,9 @@ class ManagerAgent:
     """관리자 에이전트 - 워커 에이전트들의 결과를 통합하고 최종 답변 생성"""
     
     def __init__(self):
-        # Manager Agent는 Gemini 2.5 Pro 사용
+        # Manager Agent는 허깅페이스 모델 사용
         self.llm_handler = LLMHandler(
-            provider="google",
-            model_name="gemini-2.5-pro",
+            model_name="microsoft/DialoGPT-large",
             temperature=0.3
         )
         self.worker_pool = WorkerAgentPool()

@@ -1,0 +1,36 @@
+# LangGraph 및 멀티 에이전트 시스템
+langgraph>=0.2.0
+langchain>=0.2.0
+langchain-core>=0.2.0
+
+# 허깅페이스 모델
+transformers>=4.40.0
+torch>=2.0.0
+requests>=2.31.0
+
+# 데이터베이스 및 메모리 관리
+sqlite3
+sqlalchemy>=2.0.0
+
+# PDF 처리
+PyPDF2>=3.0.0
+pdfplumber>=0.10.0
+
+# 웹 검색 및 크롤링
+beautifulsoup4>=4.12.0
+requests-html>=0.10.0
+selenium>=4.15.0
+
+# 유틸리티
+python-dotenv>=1.0.0
+asyncio
+aiohttp>=3.9.0
+
+# 테스트
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# 로깅 및 모니터링
+logging
+time
+datetime 

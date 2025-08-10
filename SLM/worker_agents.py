@@ -205,12 +205,11 @@ class BaseWorkerAgent(ABC):
         return " ".join(reasoning_parts)
 
 class LegalExpertAgent(BaseWorkerAgent):
-    """법률 전문 에이전트 (Gemini 2.5 사용)"""
+    """법률 전문 에이전트 (허깅페이스 모델 사용)"""
     
     def __init__(self, memory_manager: MemoryManager, feedback_system: FeedbackSystem):
         model_config = {
-            "provider": "google",
-            "model": "gemini-2.5-pro",
+            "model": "microsoft/DialoGPT-large",
             "temperature": 0.2,
             "max_tokens": 1024
         }
@@ -218,9 +217,8 @@ class LegalExpertAgent(BaseWorkerAgent):
         self.specializations = ["법률", "규정", "시행령", "약관", "조항", "금융법", "소비자보호", "판례", "사례"]
     
     def _setup_llm_handler(self) -> LLMHandler:
-        """Google Gemini 2.5 모델 설정"""
+        """허깅페이스 모델 설정"""
         return LLMHandler(
-            provider=self.model_config["provider"],
             model_name=self.model_config["model"],
             temperature=self.model_config["temperature"]
         )
@@ -266,12 +264,11 @@ class LegalExpertAgent(BaseWorkerAgent):
         return prompt
 
 class TechnicalAnalystAgent(BaseWorkerAgent):
-    """FAQ, 민원 분석 전문 에이전트 (Claude 4 Sonnet 사용)"""
+    """FAQ, 민원 분석 전문 에이전트 (허깅페이스 모델 사용)"""
     
     def __init__(self, memory_manager: MemoryManager, feedback_system: FeedbackSystem):
         model_config = {
-            "provider": "anthropic",
-            "model": "claude-sonnet-4-20250514",
+            "model": "microsoft/DialoGPT-medium",
             "temperature": 0.3,
             "max_tokens": 1024
         }
@@ -279,9 +276,8 @@ class TechnicalAnalystAgent(BaseWorkerAgent):
         self.specializations = ["분석", "판례", "사례", "FAQ", "대응안내", "소비자보호", "민원분석", "보호방안", "분쟁해결절차"]
     
     def _setup_llm_handler(self) -> LLMHandler:
-        """Anthropic Claude 4 Sonnet 모델 설정"""
+        """허깅페이스 모델 설정"""
         return LLMHandler(
-            provider=self.model_config["provider"],
             model_name=self.model_config["model"],
             temperature=self.model_config["temperature"]
         )
@@ -292,7 +288,7 @@ class TechnicalAnalystAgent(BaseWorkerAgent):
         web_sources = context.get("web_sources", [])
         
         prompt = f"""
-# Role: 당신은 민원, 내규, FAQ 분석에 능통하고 대응 절차와 보호 방안 그리고 분쟁 해결 절차를 명확하고 신뢰성 있게 안내하는 분석 전문가 입니다.
+# Role: 당신은 민원 분석 내규, FAQ 분석에 능통하고 대응 절차와 보호 방안 그리고 분쟁 해결 절차를 명확하고 신뢰성 있게 안내하는 분석 전문가 입니다.
 
 # Action:
 - 아래 사용자 질문과 함께 제공된 법률 문서 및 웹 검색 정보를 종합적으로 분석하고 관련 사례, 금융기관 FAQ 등을 기반으로 실무적으로 유효한 대응 절차와 보호 방안을 작성하시오.
@@ -325,12 +321,11 @@ class TechnicalAnalystAgent(BaseWorkerAgent):
         return prompt
 
 class GeneralKnowledgeAgent(BaseWorkerAgent):
-    """일반 지식 전문 에이전트 (GPT-4.1 사용)"""
+    """일반 지식 전문 에이전트 (허깅페이스 모델 사용)"""
     
     def __init__(self, memory_manager: MemoryManager, feedback_system: FeedbackSystem):
         model_config = {
-            "provider": "openai",
-            "model": "gpt-4.1",
+            "model": "microsoft/DialoGPT-medium",
             "temperature": 0.4,
             "max_tokens": 1024
         }
@@ -338,9 +333,8 @@ class GeneralKnowledgeAgent(BaseWorkerAgent):
         self.specializations = ["일반상식", "설명", "요약", "분석", "대응안내", "소비자보호", "금융지식"]
     
     def _setup_llm_handler(self) -> LLMHandler:
-        """OpenAI GPT-4.1 모델 설정"""
+        """허깅페이스 모델 설정"""
         return LLMHandler(
-            provider=self.model_config["provider"],
             model_name=self.model_config["model"],
             temperature=self.model_config["temperature"]
         )

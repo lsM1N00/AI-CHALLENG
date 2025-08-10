@@ -40,8 +40,7 @@ class BGEM3Embeddings:
 
     def embed_query(self, text: str) -> List[float]:
         try:
-            # BGE-M3 모델: 최대 8192 토큰, 1024차원 벡터 (4000토큰으로 제한)
-            inputs = self.tokenizer([text], padding=True, truncation=True, return_tensors="pt", max_length=4000)
+            inputs = self.tokenizer([text], padding=True, truncation=True, return_tensors="pt", max_length=512)
             with torch.no_grad():
                 outputs = self.model(**inputs)
                 embedding = outputs.last_hidden_state[:, 0, :]
