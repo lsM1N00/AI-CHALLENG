@@ -1,0 +1,63 @@
+2025-08-11 12:44:52.653072: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-08-11 12:44:52.671718: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1754916292.691299   14234 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1754916292.697800   14234 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1754916292.716850   14234 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754916292.716947   14234 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754916292.716987   14234 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754916292.717026   14234 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-08-11 12:44:52.722045: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+[INFO] BGE-M3 임베딩 모델 로드 완료: BAAI/bge-m3
+[INFO] TensorFlow version 2.19.0 available.
+[INFO] JAX version 0.5.3 available.
+/content/drive/MyDrive/SLM/api_server.py:85: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+💡 HUGGINGFACE_ACCESS_TOKEN이 설정되지 않았습니다.
+💡 공개 모델을 사용하여 시스템이 작동합니다.
+💡 더 나은 성능을 원한다면 .env 파일에 액세스 토큰을 설정하세요.
+🚀 멀티 에이전트 시스템 API 서버 시작...
+💡 병렬 실행이 포함된 LangGraph 시스템과 연결됩니다.
+INFO:     Will watch for changes in these directories: ['/content/drive/MyDrive/SLM/frontend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [14234] using StatReload
+2025-08-11 12:45:07.263672: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1754916307.282395   14351 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1754916307.288543   14351 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1754916307.307203   14351 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754916307.307339   14351 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754916307.307398   14351 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754916307.307476   14351 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+[INFO] BGE-M3 임베딩 모델 로드 완료: BAAI/bge-m3
+[INFO] TensorFlow version 2.19.0 available.
+[INFO] JAX version 0.5.3 available.
+💡 HUGGINGFACE_ACCESS_TOKEN이 설정되지 않았습니다.
+💡 공개 모델을 사용하여 시스템이 작동합니다.
+💡 더 나은 성능을 원한다면 .env 파일에 액세스 토큰을 설정하세요.
+INFO:     Started server process [14351]
+INFO:     Waiting for application startup.
+[INFO] Use pytorch device_name: cuda:0
+[INFO] Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+[INFO] Use pytorch device_name: cuda:0
+[INFO] Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+[INFO] Use pytorch device_name: cuda:0
+[INFO] Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+[INFO] Use pytorch device_name: cuda:0
+[INFO] Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+[INFO] Use pytorch device_name: cuda:0
+[INFO] Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+[INFO] Use pytorch device_name: cuda:0
+[INFO] Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14351]
+INFO:     Stopping reloader process [14234]
