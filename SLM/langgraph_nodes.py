@@ -249,11 +249,14 @@ class LangGraphNodes:
             }
     
     async def manager_synthesis_node(self, state: AgentState) -> dict:
-        """Manager 에이전트가 보완된 답변들을 종합하는 노드"""
+        """Manager 에이전트가 보완된 답변들을 종합하고 도구 호출 여부를 분석하는 노드"""
         try:
-            print(f"[ManagerSynthesis] Manager 에이전트 종합 분석 시작")
+            print(f"[ManagerSynthesis] Manager 에이전트 종합 분석 및 도구 호출 분석 시작")
             
-            # 보완된 응답들 수집
+            # 1. 도구 호출 필요성 분석
+            tool_analysis = await self._analyze_tool_calling_needs(state.query, state)
+            
+            # 2. 보완된 응답들 수집
             refined_responses = []
             
             for response_key in ["refined_legal_response", "refined_technical_response", "refined_general_response"]:
@@ -270,16 +273,17 @@ class LangGraphNodes:
                     )
                     refined_responses.append(agent_response)
             
-            # Manager가 보완된 답변들을 종합하여 최종 분석
+            # 3. Manager가 보완된 답변들을 종합하여 최종 분석
             manager_analysis = await self.manager.synthesize_agent_responses(
                 state.query, 
                 refined_responses
             )
             
-            print(f"[ManagerSynthesis] Manager 종합 분석 완료")
+            print(f"[ManagerSynthesis] Manager 종합 분석 완료. 도구 호출: {tool_analysis['needs_tool']}")
             
             return {
                 "manager_synthesis": manager_analysis,
+                "tool_analysis": tool_analysis,
                 "consolidated_responses": refined_responses,
                 "next_step": "generate_final_answer"
             }
@@ -288,6 +292,7 @@ class LangGraphNodes:
             print(f"[ManagerSynthesis] 오류: {e}")
             return {
                 "manager_synthesis": {},
+                "tool_analysis": {"needs_tool": False, "tool_type": "none", "reason": "오류 발생"},
                 "error_message": f"Manager 종합 분석 실패: {str(e)}",
                 "next_step": "generate_final_answer"
             }
@@ -633,3 +638,225 @@ class LangGraphNodes:
         except Exception as e:
             print(f"[RefineResponse] {agent_type} 답변 보완 실패: {e}")
             return original_response 
+
+    async def _analyze_tool_calling_needs(self, query: str, state: AgentState) -> dict:
+        """SLM을 사용하여 사용자 쿼리를 지능적으로 분석하고 도구 호출 필요성 판단"""
+        try:
+            print(f"[ToolAnalysis] SLM 기반 도구 호출 필요성 분석: {query}")
+            
+            # 1. SLM을 사용한 지능적 분석
+            tool_analysis_result = await self._slm_analyze_tool_needs(query, state)
+            
+            # 2. 분석 결과 로깅
+            print(f"[ToolAnalysis] SLM 분석 결과:")
+            print(f"  - 도구 호출 필요: {tool_analysis_result['needs_tool']}")
+            print(f"  - 도구 유형: {tool_analysis_result['tool_type']}")
+            print(f"  - 판단 근거: {tool_analysis_result['reason']}")
+            print(f"  - 신뢰도: {tool_analysis_result.get('confidence', 0.0):.2f}")
+            
+            return tool_analysis_result
+            
+        except Exception as e:
+            print(f"[ToolAnalysis] SLM 분석 오류: {e}")
+            # SLM 분석 실패 시 기본 규칙 기반 분석으로 폴백
+            return await self._fallback_rule_based_analysis(query, state)
+    
+    async def _slm_analyze_tool_needs(self, query: str, state: AgentState) -> dict:
+        """Manager 에이전트 모델을 사용한 도구 호출 필요성 분석"""
+        try:
+            # Manager 에이전트 모델 사용
+            if self.manager and hasattr(self.manager, 'llm'):
+                # SLM 프롬프트 구성
+                slm_prompt = self._create_tool_analysis_prompt(query, state)
+                
+                # Manager 에이전트의 LLM으로 분석
+                analysis_response = await self.manager.llm.get_response(slm_prompt)
+                
+                # SLM 응답 파싱
+                parsed_analysis = self._parse_slm_tool_analysis(analysis_response)
+                
+                # 기본 정보 추가
+                parsed_analysis.update({
+                    "analysis_method": "Manager Agent Model",
+                    "analysis_timestamp": time.time(),
+                    "query": query,
+                    "complexity_score": getattr(state, 'complexity_score', 0.0),
+                    "word_count": len(query.split()),
+                    "has_question_mark": "?" in query or "？" in query
+                })
+                
+                return parsed_analysis
+            else:
+                raise Exception("Manager 에이전트 모델을 사용할 수 없습니다")
+                
+        except Exception as e:
+            print(f"[ManagerAnalysis] Manager 에이전트 분석 실패: {e}")
+            raise e
+    
+    def _create_tool_analysis_prompt(self, query: str, state: AgentState) -> str:
+        """도구 호출 분석을 위한 SLM 프롬프트 생성"""
+        complexity_score = getattr(state, 'complexity_score', 0.0)
+        word_count = len(query.split())
+        
+        prompt = f"""
+# Role: 당신은 금융분쟁 해결 AI 시스템의 도구 호출 분석 전문가입니다.
+
+# Task: 주어진 사용자 질문을 분석하여 어떤 도구를 사용해야 하는지 판단하세요.
+
+# Context:
+- 사용자 질문: "{query}"
+- 질문 길이: {word_count}개 단어
+- 복잡도 점수: {complexity_score:.2f} (0.0~1.0, 높을수록 복잡)
+
+# Available Tools:
+1. **direct_response**: 단순 대화, 인사, 간단한 질문에 직접 응답
+2. **document_retriever**: 전문적 금융/법률 질문, 구체적인 절차/방법 질문에 문서 검색
+
+# Analysis Criteria:
+- **단순 대화/인사**: "안녕하세요", "고마워요", "어떻게 해요?" 등
+- **전문 질문**: "대출 분쟁 해결 방법", "보험금 청구 절차", "법적 책임" 등
+- **구체적 절차**: "어떤 서류가 필요해요?", "언제까지 신고해야 해요?" 등
+- **복잡한 상황**: 여러 조건이 포함된 복합적인 질문
+
+# Output Format (JSON):
+{{
+    "needs_tool": true/false,
+    "tool_type": "direct_response" or "document_retriever",
+    "reason": "판단 근거를 간단명료하게 설명",
+    "confidence": 0.0~1.0 (판단 신뢰도),
+    "analysis_details": {{
+        "query_category": "질문 카테고리 (인사/일반질문/전문질문/절차질문)",
+        "complexity_level": "복잡도 수준 (낮음/보통/높음)",
+        "requires_expertise": true/false,
+        "suggested_approach": "제안하는 접근 방법"
+    }}
+}}
+
+# Instructions:
+1. 질문의 내용과 맥락을 정확히 파악하세요
+2. 단순한 대화인지 전문적인 정보가 필요한지 판단하세요
+3. JSON 형식으로 정확하게 응답하세요
+4. 판단 근거를 명확하게 제시하세요
+
+사용자 질문: "{query}"
+"""
+        return prompt
+    
+    def _parse_slm_tool_analysis(self, slm_response: str) -> dict:
+        """SLM 응답을 파싱하여 도구 호출 분석 결과 추출"""
+        try:
+            # JSON 응답 추출 시도
+            import json
+            import re
+            
+            # JSON 블록 찾기
+            json_match = re.search(r'\{.*\}', slm_response, re.DOTALL)
+            if json_match:
+                json_str = json_match.group()
+                analysis = json.loads(json_str)
+                
+                # 필수 필드 검증 및 기본값 설정
+                return {
+                    "needs_tool": analysis.get("needs_tool", False),
+                    "tool_type": analysis.get("tool_type", "direct_response"),
+                    "reason": analysis.get("reason", "SLM 분석 결과"),
+                    "confidence": analysis.get("confidence", 0.8),
+                    "analysis_details": analysis.get("analysis_details", {}),
+                    "raw_slm_response": slm_response
+                }
+            else:
+                # JSON이 없는 경우 텍스트 분석
+                return self._fallback_text_analysis(slm_response)
+                
+        except Exception as e:
+            print(f"[SLMParsing] SLM 응답 파싱 실패: {e}")
+            return self._fallback_text_analysis(slm_response)
+    
+    def _fallback_text_analysis(self, slm_response: str) -> dict:
+        """SLM 응답 파싱 실패 시 텍스트 기반 분석"""
+        response_lower = slm_response.lower()
+        
+        # 키워드 기반 간단 분석
+        if any(keyword in response_lower for keyword in ["document", "검색", "문서", "retriever"]):
+            return {
+                "needs_tool": True,
+                "tool_type": "document_retriever",
+                "reason": "SLM이 문서 검색 필요로 판단",
+                "confidence": 0.6,
+                "analysis_details": {"query_category": "전문질문"},
+                "raw_slm_response": slm_response
+            }
+        elif any(keyword in response_lower for keyword in ["direct", "직접", "응답", "대화"]):
+            return {
+                "needs_tool": False,
+                "tool_type": "direct_response",
+                "reason": "SLM이 직접 응답으로 판단",
+                "confidence": 0.6,
+                "analysis_details": {"query_category": "일반질문"},
+                "raw_slm_response": slm_response
+            }
+        else:
+            return {
+                "needs_tool": False,
+                "tool_type": "direct_response",
+                "reason": "SLM 응답 파싱 실패로 기본값 사용",
+                "confidence": 0.3,
+                "analysis_details": {"query_category": "분석실패"},
+                "raw_slm_response": slm_response
+            }
+    
+    async def _fallback_rule_based_analysis(self, query: str, state: AgentState) -> dict:
+        """SLM 분석 실패 시 규칙 기반 분석으로 폴백"""
+        print(f"[FallbackAnalysis] 규칙 기반 분석으로 폴백")
+        
+        query_lower = query.lower()
+        complexity_score = getattr(state, 'complexity_score', 0.0)
+        word_count = len(query.split())
+        has_question_mark = "?" in query or "？" in query
+        
+        # 단순 대화 판단
+        simple_keywords = ["안녕", "고마워", "좋아", "어떻게", "무엇", "언제", "어디서"]
+        if any(keyword in query_lower for keyword in simple_keywords):
+            if word_count <= 8 and complexity_score < 0.3:
+                return {
+                    "needs_tool": False,
+                    "tool_type": "direct_response",
+                    "reason": "규칙 기반: 단순 대화/질문",
+                    "confidence": 0.5,
+                    "analysis_method": "Rule-based Fallback",
+                    "analysis_timestamp": time.time(),
+                    "query": query,
+                    "complexity_score": complexity_score,
+                    "word_count": word_count,
+                    "has_question_mark": has_question_mark
+                }
+        
+        # 전문 질문 판단
+        expert_keywords = ["법", "대출", "보험", "분쟁", "절차", "방법", "책임"]
+        if any(keyword in query_lower for keyword in expert_keywords):
+            return {
+                "needs_tool": True,
+                "tool_type": "document_retriever",
+                "reason": "규칙 기반: 전문적 질문",
+                "confidence": 0.5,
+                "analysis_method": "Rule-based Fallback",
+                "analysis_timestamp": time.time(),
+                "query": query,
+                "complexity_score": complexity_score,
+                "word_count": word_count,
+                "has_question_mark": has_question_mark
+            }
+        
+        # 기본값
+        return {
+            "needs_tool": False,
+            "tool_type": "direct_response",
+            "reason": "규칙 기반: 기본값 (직접 응답)",
+            "confidence": 0.3,
+            "analysis_method": "Rule-based Fallback",
+            "analysis_timestamp": time.time(),
+            "query": query,
+            "complexity_score": complexity_score,
+            "word_count": word_count,
+            "has_question_mark": has_question_mark
+        } 
